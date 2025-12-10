@@ -23,6 +23,17 @@ public class BruteForceProtectionService {
         return username.toLowerCase() + ":" + ip;
     }
 
+    public long getRemainingBlockTimeSeconds(String username, String ip) {
+        Attempt a = attempts.get(key(username, ip));
+        if (a == null) return 0;
+        
+        long secondsElapsed = java.time.temporal.ChronoUnit.SECONDS.between(
+            a.firstAttemptTime, Instant.now());
+        long remainingSeconds = BLOCK_DURATION_SECONDS - secondsElapsed;
+        
+        return remainingSeconds > 0 ? remainingSeconds : 0;
+    }
+
     public boolean isBlocked(String username, String ip) {
         Attempt a = attempts.get(key(username, ip));
         if (a == null) return false;

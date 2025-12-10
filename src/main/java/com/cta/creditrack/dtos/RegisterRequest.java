@@ -3,6 +3,7 @@ package com.cta.creditrack.dtos;
 import org.springframework.lang.Nullable;
 
 import com.cta.creditrack.enums.RoleName;
+
 import jakarta.validation.constraints.*;
 
 public record RegisterRequest(
@@ -18,5 +19,8 @@ public record RegisterRequest(
     @Nullable String lastname,
     
     @Nullable
-    RoleName role
+    RoleName role,
+
+    @Nullable
+    String program
 ) {}

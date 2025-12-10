@@ -9,6 +9,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.cta.creditrack.model.Role;
 import com.cta.creditrack.model.User;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class CustomUserDetials implements UserDetails {
 
     private final User user;
@@ -55,7 +60,10 @@ public class CustomUserDetials implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return user.getIsActive(); }
+    public boolean isEnabled() { 
+        // Default to true if isActive is null, otherwise use the value
+        return user.getIsActive() == null ? true : user.getIsActive(); 
+    }
 
     
 
