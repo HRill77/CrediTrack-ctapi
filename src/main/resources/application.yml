@@ -61,7 +61,7 @@ info:
 
 logging:
   level:
-    root: INFO
+    root: INFO 
     org.springframework: ERROR
     org.springframework.web: DEBUG
     org.springframework.web.client.RestTemplate: OFF

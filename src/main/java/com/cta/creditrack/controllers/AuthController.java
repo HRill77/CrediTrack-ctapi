@@ -48,9 +48,9 @@ public class AuthController {
             HttpServletResponse httpResponse) {
 
         String clientIp = httpRequest.getRemoteAddr();
-
+        // Check if the user is blocked due to too many failed attempts
         if (bruteForceService.isBlocked(req.username(), clientIp)) {
-            long remainingSeconds = bruteForceService.getRemainingBlockTimeSeconds(req.username(), clientIp);
+            long remainingSeconds = bruteForceService.getRemainingBlockTimeSeconds(req.username(), clientIp);//
             long remainingMinutes = (remainingSeconds + 59) / 60; // Round up
             
             ApiErrorResponse error = new ApiErrorResponse(
@@ -63,6 +63,8 @@ public class AuthController {
         }
 
         try {
+            // 0) Authenticate the user
+            // This will throw BadCredentialsException if authentication fails
             Authentication auth = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             req.username(), req.password()));
@@ -96,10 +98,9 @@ public class AuthController {
             log.info("User '{}' logged in. Session ID: {}", req.username(), sessionId);
             log.info("User roles: {}", roles);
             log.info("Session expires at: {}", expiresAt);
-
-            // Actually, hindi mo na kailangan ito, Tomcat/Undertow na magse-set ng cookie,
-            // pero ok lang kung gusto mong explicit:
-            jakarta.servlet.http.Cookie sessionCookie = new jakarta.servlet.http.Cookie("JSESSIONID", sessionId);
+            
+            // 4) Set session ID in HttpOnly cookie
+            Cookie sessionCookie = new Cookie("JSESSIONID", sessionId);
             sessionCookie.setPath("/");
             sessionCookie.setHttpOnly(true);
             sessionCookie.setMaxAge(-1); // Session cookie

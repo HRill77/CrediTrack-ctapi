@@ -7,8 +7,8 @@ public record UserSearchResult(
             Boolean isActive,
             String program,
             String role,
-            Object createdAt,
-            Object updatedAt
+            String createdAt,
+            String updatedAt
 ) {
 
 }
