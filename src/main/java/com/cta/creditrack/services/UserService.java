@@ -4,15 +4,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.cta.creditrack.dtos.CreateUserRequestDto;
 import com.cta.creditrack.dtos.UserSearchRequest;
 import com.cta.creditrack.dtos.UserSearchResult;
 import com.cta.creditrack.model.Transaction;
+import com.cta.creditrack.model.User;
 import com.cta.creditrack.repository.UserRepository;
 import com.cta.creditrack.utils.CheckNullOrIsEmpty;
+import com.cta.creditrack.utils.PasswordGenerator;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -30,6 +34,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final TransactionService transactionService;
+    private final PasswordEncoder passwordEncoder;
 
 
     public Page<UserSearchResult> searchUsers(UserSearchRequest request, Pageable pageable) {
@@ -158,6 +163,29 @@ public class UserService {
         }
     }
 
+    public Boolean existsByEmailIgnoreCase(String email) {
+        return userRepository.existsByEmailIgnoreCase(email);
+    }
+
+
+
+    public User createUser(CreateUserRequestDto dto) {
+        String generatedPassword = PasswordGenerator.generatePassword();
+
+        User user = User.builder()
+                .firstname(dto.firstName())
+                .middlename(dto.middleName())
+                .lastname(dto.lastName())
+                .suffix(dto.suffix())
+                .email(dto.email().toLowerCase())
+                .password(passwordEncoder.encode(generatedPassword))
+                .phoneNumber(dto.phone())
+                .isActive(true)
+                .build();
+
+        return userRepository.save(user);
+    }
+
     private Comparator<UserSearchResult> getUserListComparator(String property, boolean ascending) {
         Comparator<UserSearchResult> comparator = null;
 
@@ -194,6 +222,9 @@ public class UserService {
                 comparator = Comparator.comparing(UserSearchResult::updatedAt,
                     Comparator.nullsLast(String::compareToIgnoreCase)
                 );
+                break;
+            case "id":
+                comparator = Comparator.comparing(UserSearchResult::id);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid sort field: " + property);
