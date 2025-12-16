@@ -1,12 +1,29 @@
 package com.cta.creditrack.services;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.cta.creditrack.dtos.CreateUserRequestDto;
+import com.cta.creditrack.dtos.UserSearchRequest;
 import com.cta.creditrack.dtos.UserSearchResult;
 import com.cta.creditrack.model.Transaction;
+import com.cta.creditrack.model.User;
 import com.cta.creditrack.repository.UserRepository;
+import com.cta.creditrack.utils.CheckNullOrIsEmpty;
+import com.cta.creditrack.utils.PasswordGenerator;
+
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,9 +34,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final TransactionService transactionService;
+    private final PasswordEncoder passwordEncoder;
 
 
-    public List<UserSearchResult> searchUsers(String searchText, Long programId, Long roleId) {
+    public Page<UserSearchResult> searchUsers(UserSearchRequest request, Pageable pageable) {
+
+        String searchText = CheckNullOrIsEmpty.isEmptyOrNull(request.searchText());
+        Long programId = request.programId();
+        Long roleId = request.roleId();
         log.info("Searching users - searchText: {}, programId: {}, roleId: {}", 
                  searchText, programId, roleId);
         
@@ -38,17 +60,37 @@ public class UserService {
             
             List<Object[]> results = userRepository.searchUsers(searchText, programId, roleId);
             
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            
             List<UserSearchResult> userResults = results.stream()
-                    .map(row -> new UserSearchResult(
-                            (Long) row[0],              // id
-                            String.format("%s, %s %s", row[3], row[1], ((String) row[2]).charAt(0)),// fullName
-                            (String) row[4],            // email
-                            (Boolean) row[5],           // is_active
-                            (String) row[6],            // program
-                            (String) row[7],            // role
-                            row[8],                     // created_at
-                            row[9]                      // updated_at
-                    ))
+                    .map(row -> {
+                        String createdAtStr = "";
+                        String updatedAtStr = "";
+                        
+                        // Convert Timestamp to String
+                        if (row[8] instanceof Timestamp) {
+                            createdAtStr = ((Timestamp) row[8]).toLocalDateTime().format(dateFormatter);
+                        } else if (row[8] instanceof LocalDateTime) {
+                            createdAtStr = ((LocalDateTime) row[8]).format(dateFormatter);
+                        }
+                        
+                        if (row[9] instanceof Timestamp) {
+                            updatedAtStr = ((Timestamp) row[9]).toLocalDateTime().format(dateFormatter);
+                        } else if (row[9] instanceof LocalDateTime) {
+                            updatedAtStr = ((LocalDateTime) row[9]).format(dateFormatter);
+                        }
+                        
+                        return new UserSearchResult(
+                                (Long) row[0],              // id
+                                String.format("%s, %s %s", row[3], row[1], ((String) row[2]).charAt(0)),// fullName
+                                (String) row[4],            // email
+                                (Boolean) row[5],           // is_active
+                                (String) row[6],            // program
+                                (String) row[7],            // role
+                                createdAtStr,               // created_at
+                                updatedAtStr                // updated_at
+                        );
+                    })
                     .collect(Collectors.toList());
             
             log.info("Found {} users", userResults.size());
@@ -58,8 +100,38 @@ public class UserService {
             transaction.setActionDetails("User search - Search text: " + searchText + ", Program ID: " + programId + ", Role ID: " + roleId);
             transaction.setActionType("USER_SEARCH");
             transactionService.postTransaction(transaction, null);
+
+            // create sorting order
+        if (pageable.getSort().isSorted()) {
+            Comparator<UserSearchResult> comparator = null;
+
+            for (Sort.Order order : pageable.getSort()) {
+                Comparator<UserSearchResult> fieldComparator = getUserListComparator(order.getProperty(),
+                        order.isAscending());
+
+                if (fieldComparator != null) {
+                    comparator = comparator == null ? fieldComparator : comparator.thenComparing(fieldComparator);
+                }
+            }
+
+            if (comparator != null) {
+                userResults.sort(comparator);
+            }
+        }
             
-            return userResults;
+            // manual pagination
+        int start = (int) pageable.getOffset();
+        int total = userResults.size();
+        int end = Math.min(start + pageable.getPageSize(), total);
+
+        if (start >= total) {
+            return new PageImpl<>(Collections.emptyList(), pageable, total);
+        }
+
+        List<UserSearchResult> paginatedList = userResults.subList(start, end);
+
+        // return the sorted result wrapped in a PageImpl
+        return new PageImpl<>(paginatedList, pageable, total);
         } catch (IllegalArgumentException e) {
             log.warn("Invalid search parameters: {}", e.getMessage());
             
@@ -89,6 +161,76 @@ public class UserService {
             
             throw new RuntimeException("Error searching users: " + e.getMessage(), e);
         }
+    }
+
+    public Boolean existsByEmailIgnoreCase(String email) {
+        return userRepository.existsByEmailIgnoreCase(email);
+    }
+
+
+
+    public User createUser(CreateUserRequestDto dto) {
+        String generatedPassword = PasswordGenerator.generatePassword();
+
+        User user = User.builder()
+                .firstname(dto.firstName())
+                .middlename(dto.middleName())
+                .lastname(dto.lastName())
+                .suffix(dto.suffix())
+                .email(dto.email().toLowerCase())
+                .password(passwordEncoder.encode(generatedPassword))
+                .phoneNumber(dto.phone())
+                .isActive(true)
+                .build();
+
+        return userRepository.save(user);
+    }
+
+    private Comparator<UserSearchResult> getUserListComparator(String property, boolean ascending) {
+        Comparator<UserSearchResult> comparator = null;
+
+        switch (property) {
+            case "fullName":
+                comparator = Comparator.comparing(UserSearchResult::fullName,
+                    Comparator.nullsLast(String::compareToIgnoreCase)
+                );
+                break;
+            case "email":
+                comparator = Comparator.comparing(UserSearchResult::email,
+                    Comparator.nullsLast(String::compareToIgnoreCase)
+                );
+                break;
+            case "isActive":
+                comparator = Comparator.comparing(UserSearchResult::isActive);
+                break;
+            case "program":
+                comparator = Comparator.comparing(UserSearchResult::program,
+                    Comparator.nullsLast(String::compareToIgnoreCase)
+                );
+                break;
+            case "role":
+                comparator = Comparator.comparing(UserSearchResult::role,
+                    Comparator.nullsLast(String::compareToIgnoreCase)
+                );
+                break;
+            case "createdAt":
+                comparator = Comparator.comparing(UserSearchResult::createdAt,
+                    Comparator.nullsLast(String::compareToIgnoreCase)
+                );
+                break;
+            case "updatedAt":
+                comparator = Comparator.comparing(UserSearchResult::updatedAt,
+                    Comparator.nullsLast(String::compareToIgnoreCase)
+                );
+                break;
+            case "id":
+                comparator = Comparator.comparing(UserSearchResult::id);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid sort field: " + property);
+        }
+
+        return ascending ? comparator : comparator.reversed();
     }
 
 

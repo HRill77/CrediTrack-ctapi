@@ -13,7 +13,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -27,9 +26,11 @@ import lombok.ToString;
 @Entity
 @Getter
 @Setter
-@Table(name= "cta_user")
+@Table(name = "cta_user")
 @ToString
-@NoArgsConstructor @AllArgsConstructor @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,55 +38,61 @@ public class User {
     private String firstname;
     private String middlename;
     private String lastname;
-    @Column(nullable=false, unique=true, length=100)
-    private String email;
-    
+    private String suffix;
+    private String phoneNumber;
 
-    @Column(nullable=false, length=255)
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
+
+    @Column(nullable = false, length = 255)
     private String password;
 
     @Column(nullable = false)
     private Boolean isActive = true;
 
+    /** Forces user to change password on login */
+    @Column(nullable = false)
+    private Boolean mustChangePassword = true;
+
+    /** When the current password was set */
+    @Column(name = "password_set_at", nullable = false)
+    private Instant passwordSetAt;
+
+    /** Optional: when temp password expires */
+    @Column(name = "password_expires_at")
+    private Instant passwordExpiresAt;
+
+     // ---------------- RELATIONS ----------------
+
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "cta_users_program",
-        joinColumns = @JoinColumn(name="user_id"),
-        inverseJoinColumns = @JoinColumn(name="program_id"))
+    @JoinTable(name = "cta_users_program", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "program_id"))
     @Builder.Default
     private Set<Program> programs = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name="cta_users_roles",
-        joinColumns = @JoinColumn(name="user_id"),
-        inverseJoinColumns = @JoinColumn(name="role_id")
-    )
+    @JoinTable(name = "cta_users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
 
-  
-
-    @Column(name="created_at", updatable = false)
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    @Column(name="updated_at")
+    @Column(name = "updated_at")
     private Instant updatedAt;
 
     @PrePersist
     public void prePersist() {
-        createdAt = Instant.now();
-        updatedAt = createdAt;
+        Instant now = Instant.now();
+        createdAt = now;
+        updatedAt = now;
+        passwordSetAt = now;
+        // Set password to expire in 24 hours
+        passwordExpiresAt = now.plusSeconds(24 * 60 * 60);
     }
 
     @PreUpdate
     public void preUpdate() {
         updatedAt = Instant.now();
     }
-
-
-
-
-
 
 }

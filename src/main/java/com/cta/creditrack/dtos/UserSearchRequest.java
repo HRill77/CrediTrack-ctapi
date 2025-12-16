@@ -1,7 +1,14 @@
 package com.cta.creditrack.dtos;
 
+import java.util.List;
+
+import org.springframework.lang.Nullable;
+
 public record UserSearchRequest(
-    String searchText,
-    Long programId,
-    Long roleId) {
+    @Nullable String searchText,
+    @Nullable Long programId,
+    @Nullable Long roleId,
+    @Nullable List<String> sortField,
+    @Nullable List<String> sortDirection
+) {
 }
