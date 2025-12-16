@@ -8,6 +8,7 @@ import java.util.*;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -38,7 +39,8 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
         )
-        .authorizeHttpRequests(auth -> auth
+        .authorizeHttpRequests(auth -> 
+            auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
               .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
               .requestMatchers("/api/auth/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_USER")
               .anyRequest().authenticated()

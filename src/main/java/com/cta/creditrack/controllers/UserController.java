@@ -2,6 +2,10 @@ package com.cta.creditrack.controllers;
 
 import com.cta.creditrack.dtos.UserSearchRequest;
 import com.cta.creditrack.dtos.UserSearchResult;
+import com.cta.creditrack.model.Program;
+import com.cta.creditrack.model.Role;
+import com.cta.creditrack.services.ProgramService;
+import com.cta.creditrack.services.RoleService;
 import com.cta.creditrack.services.UserService;
 
 import jakarta.validation.Valid;
@@ -22,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 @Slf4j
 @RestController
 @RequestMapping("/api/users")
@@ -29,6 +34,8 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final RoleService roleService;
+    private final ProgramService programService;
 
     @PostMapping("/search")
     public ResponseEntity<?> searchUsers(
@@ -70,6 +77,38 @@ public class UserController {
                     .body(createErrorResponse("An error occurred while searching users: " + e.getMessage()));
         }
     }
+
+
+    @GetMapping("/role-list")
+    public ResponseEntity<?> getRoleList() {
+        try {
+            return ResponseEntity.ok(roleService.getAllRoles());
+        } catch (Exception e) {
+            log.error("Error retrieving role list", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(createErrorResponse("An error occurred while retrieving role list: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("program-list")
+    public ResponseEntity<?> getProgramList() {
+        try {
+            return ResponseEntity.ok(programService.getAllPrograms());
+        } catch (Exception e) {
+            log.error("Error retrieving program list", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(createErrorResponse("An error occurred while retrieving program list: " + e.getMessage()));
+        }
+    }
+    
+     @GetMapping("/check-email")
+    public ResponseEntity<Boolean> checkEmailExists(
+            @RequestParam String email) {
+
+        boolean exists = userService
+                .existsByEmailIgnoreCase(email);
+
+        return ResponseEntity.ok(exists);
+    }
+    
     
     private Map<String, Object> createErrorResponse(String message) {
         Map<String, Object> errorResponse = new HashMap<>();
