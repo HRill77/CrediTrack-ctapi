@@ -22,7 +22,7 @@ public class BruteForceProtectionService {
     private String key(String username, String ip) {
         return username.toLowerCase() + ":" + ip;
     }
-
+    // Returns remaining block time in seconds
     public long getRemainingBlockTimeSeconds(String username, String ip) {
         Attempt a = attempts.get(key(username, ip));
         if (a == null) return 0;

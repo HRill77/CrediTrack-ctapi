@@ -2,13 +2,13 @@ package com.cta.creditrack.auth.config;
 
 import lombok.RequiredArgsConstructor;
 
-import java.util.Arrays;
-import java.util.List;
 
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import java.util.*;
+
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -21,7 +21,6 @@ import org.springframework.security.web.*;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import com.cta.creditrack.auth.services.CustomUserDetailsService;
 
@@ -40,7 +39,8 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
         )
-        .authorizeHttpRequests(auth -> auth
+        .authorizeHttpRequests(auth -> 
+            auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
               .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
               .requestMatchers("/api/auth/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_USER")
               .anyRequest().authenticated()
