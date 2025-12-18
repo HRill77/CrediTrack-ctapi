@@ -41,8 +41,9 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         )
         .authorizeHttpRequests(auth -> 
             auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-              .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
-              .requestMatchers("/api/auth/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_USER")
+              .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/check-temp-password", "/api/auth/update-temp-password",
+              "/api/auth/forgot-password").permitAll()
+              .requestMatchers("/api/auth/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_USER", "ROLE_ADMIN")
               .anyRequest().authenticated()
         )
         .authenticationProvider(daoAuthProvider())
