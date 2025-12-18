@@ -37,7 +37,17 @@ spring:
 
 #   thymeleaf:
 #    prefix: file:///${user.dir}//target//classes//static/
-
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: inquiry.creditrack@gmail.com
+    password: bubvjempkfkoowjr
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 server:
   servlet:
