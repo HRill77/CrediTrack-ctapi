@@ -11,8 +11,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     // boolean existsByEmployeeNumber(String employeeNumber);
 
-    // Optional<User> findByEmployeeNumber(String employeeNumber);
+    boolean existsByEmailIgnoreCase(String email);
+
+    
     Optional<User> findByEmail(String email);
+
+    Optional<User> findByEmailIgnoreCase(String email);
 
     @Query( value = """
             SELECT 
@@ -34,4 +38,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
             OR ur.role_id = :roleId
             )   """,nativeQuery = true)
     List<Object[]> searchUsers(String searchText, Long programId, Long roleId);
+
 }

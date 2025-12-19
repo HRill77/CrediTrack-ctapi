@@ -32,4 +32,8 @@ public class RoleService {
         new Role(null, "ROLE_USER"));
     }
 
+    public List<Role> getAllRoles() {
+        return roleRepository.findAll();
+    }
+
 }

@@ -37,7 +37,17 @@ spring:
 
 #   thymeleaf:
 #    prefix: file:///${user.dir}//target//classes//static/
-
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: inquiry.creditrack@gmail.com
+    password: bubvjempkfkoowjr
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 server:
   servlet:
@@ -61,7 +71,7 @@ info:
 
 logging:
   level:
-    root: INFO
+    root: INFO 
     org.springframework: ERROR
     org.springframework.web: DEBUG
     org.springframework.web.client.RestTemplate: OFF
