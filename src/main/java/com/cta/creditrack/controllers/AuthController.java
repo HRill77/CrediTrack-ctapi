@@ -4,6 +4,7 @@ import com.cta.creditrack.dtos.*;
 import com.cta.creditrack.model.User;
 
 import com.cta.creditrack.services.AuthService;
+import com.cta.creditrack.services.UserService;
 import jakarta.servlet.http.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 import com.cta.creditrack.services.BruteForceProtectionService;
 import com.cta.creditrack.auth.model.CustomUserDetials;
@@ -33,12 +35,19 @@ public class AuthController {
     private final AuthService authService;
     private final AuthenticationManager authManager;
     private final BruteForceProtectionService bruteForceService;
+    private final UserService userService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest req) {
-        User user = authService.registerUser(req);
+       try {
+         User user = authService.registerUser(req);
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 "User registered with email: " + user.getEmail());
+       } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            Map.of("error", e.getMessage())
+        );
+    }
     }
 
     @PostMapping("/login")
@@ -195,5 +204,106 @@ public class AuthController {
                         .toList()));
 
     }
+
+
+    @PostMapping("/update-temp-password")
+    public ResponseEntity<?> updateTemporaryPassword(@Valid @RequestBody UpdatePasswordRequest req) {
+        try {
+            log.info("Attempting to update temporary password for email: {}", req.email());
+            
+            userService.checkAndUpdateTemporaryPassword(req.email(), req.currentPassword(), req.newPassword());
+            
+            log.info("Temporary password updated successfully for email: {}", req.email());
+            return ResponseEntity.ok(Map.of(
+                    "message", "Password updated successfully",
+                    "email", req.email()
+            ));
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Failed to update temporary password: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "message", e.getMessage(),
+                    "timestamp", Instant.now()
+            ));
+            
+        } catch (Exception e) {
+            log.error("Unexpected error while updating temporary password", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "error", "An unexpected error occurred",
+                    "timestamp", Instant.now()
+            ));
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> resetPasswordByEmail(@Valid @RequestBody ForgotPasswordRequest req) {
+        try {
+            log.info("Attempting to send temporary password to email: {}", req.email());
+            
+            userService.resetPasswordByEmail(req.email());
+            
+            log.info("Temporary password sent successfully to email: {}", req.email());
+            return ResponseEntity.ok(Map.of(
+                    "message", "Temporary password has been sent to your email",
+                    "email", req.email(),
+                    "expiresIn", "24 hours"
+            ));
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Failed to send temporary password: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                    "error", e.getMessage(),
+                    "timestamp", Instant.now()
+            ));
+            
+        } catch (Exception e) {
+            log.error("Unexpected error while sending temporary password", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "error", "An unexpected error occurred",
+                    "timestamp", Instant.now()
+            ));
+        }
+    }
+
+    @GetMapping("/check-temp-password")
+    public ResponseEntity<?> checkTemporaryPassword(@RequestParam String email,
+        @RequestParam String tempPassword
+    ) {
+        try {
+            log.info("Checking temporary password status for email: {}", email);
+            
+            boolean needsUpdate = userService.hasTemporaryPasswordToUpdate(email, tempPassword);
+            
+            String message = needsUpdate 
+                    ? "User has a temporary password that needs to be updated" 
+                    : "User does not have a temporary password or password is already permanent";
+            
+            TemporaryPasswordCheckResponse response = new TemporaryPasswordCheckResponse(
+                    email,
+                    needsUpdate,
+                    message
+            );
+            
+            log.info("Temporary password check completed for {}: updateTempPassword={}", email, needsUpdate);
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("User not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                    "error", e.getMessage(),
+                    "timestamp", Instant.now()
+            ));
+            
+        } catch (Exception e) {
+            log.error("Unexpected error while checking temporary password", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "error", "An unexpected error occurred",
+                    "timestamp", Instant.now()
+            ));
+        }
+    }
+
+
+
 
 }
