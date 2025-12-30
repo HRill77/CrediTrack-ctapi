@@ -1,0 +1,19 @@
+# Local MariaDB datasource
+spring:
+  mvc:
+    async:
+      request-timeout: 300000
+  application:
+    name: Credit Track Application
+
+  datasource:
+    url: jdbc:mariadb://localhost:3306/credit_track_db
+    username: root
+    password: root
+
+server:
+  port: 3000
+
+application:
+  id: crediTrack_dev
+ 
