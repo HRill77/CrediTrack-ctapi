@@ -26,7 +26,7 @@ public class DataIngestionController {
       private final DataIngestionService dataIngestionService;
 
     @PostMapping("/curricula")
-    public ResponseEntity<?> ingestCurriculaData(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> ingestCurriculaData(@RequestParam("file") MultipartFile file, @RequestParam("CourseCurricula") String CourseCurricula) {
         try {
             if (file.isEmpty()) {
                 Map<String, Object> response = new HashMap<>();
