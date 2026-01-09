@@ -49,31 +49,40 @@ public class DataIngestionService {
         List<String> errors = new ArrayList<>();
 
         try (Workbook workbook = WorkbookFactory.create(file)) {
-            Sheet sheet = workbook.getSheetAt(0);
 
-            curriculaList = StreamSupport.stream(sheet.spliterator(), false)
-                    .skip(1) // Skip header row
-                    .filter(row -> !isRowEmpty(row))
-                    .map(row -> {
-                        try {
-                            Curricula curricula = mapRowToCurricula(row);
-                            Optional<Curricula> existingData = curriculaRepository.findByCourseCode(curricula.getCourseCode());
-                            return existingData
-                            .map(existing -> this.updateExistingCurricula(existing, curricula))
-                            .orElse(curricula);
+    int sheetCount = workbook.getNumberOfSheets();
 
-                        } catch (Exception e) {
-                            String errorMsg = String.format("Error processing row %d: %s", row.getRowNum() + 1, e.getMessage());
-                            log.warn(errorMsg, e);
-                            errors.add(errorMsg);
-                            return null;
-                        }
-                    })
-                     .filter(b -> b != null).collect(Collectors.toList());
+    for (int i = 0; i < sheetCount; i++) {
+        Sheet sheet = workbook.getSheetAt(i);
 
-             saveAndFlushData(curriculaList);
-            
-        } catch (Exception e) {
+        StreamSupport.stream(sheet.spliterator(), false)
+                .skip(1) // skip header row
+                .filter(row -> !isRowEmpty(row))
+                .map(row -> {
+                    try {
+                        Curricula curricula = mapRowToCurricula(row);
+                        return curriculaRepository
+                                .findByCourseCode(curricula.getCourseCode())
+                                .map(existing -> updateExistingCurricula(existing, curricula))
+                                .orElse(curricula);
+                    } catch (Exception e) {
+                        String errorMsg = String.format(
+                            "Sheet: %s, Row %d: %s",
+                            sheet.getSheetName(),
+                            row.getRowNum() + 1,
+                            e.getMessage()
+                        );
+                        log.warn(errorMsg, e);
+                        errors.add(errorMsg);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .forEach(curriculaList::add);
+    }
+
+    saveAndFlushData(curriculaList);
+} catch (Exception e) {
             log.error("Failed to ingest bill rates file", e);
             throw e instanceof IOException ? (IOException) e : new IOException("Failed to process file", e);
         }
