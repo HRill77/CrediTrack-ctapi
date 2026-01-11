@@ -19,14 +19,15 @@ public class Student {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String fistName;
-    private String middleName;
-    private String lastName;
+    private String firstname;
+    private String middlename;
+    private String lastname;
     private String suffix;
     private String email;
-    private String phoneNumber;
+    private String phone;
     private String address;
-    private LocalDate  dateOfBirth;
+    private String yearLevel;
+    private LocalDate  dob;
 
     
 

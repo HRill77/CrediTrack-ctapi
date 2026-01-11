@@ -14,6 +14,24 @@ import java.util.Optional;
 public interface CurriculaRepository extends JpaRepository<Curricula, Long> {
 
     Optional<Curricula> findByCourseCode(String courseCode);
+    Optional<Curricula> findByProgramCodeAndProgramTitleAndCourseCodeAndCourseTitle(
+        String programCode,
+        String programTitle,
+        String courseCode,
+        String courseTitle
+    );
+    
+    @Query("SELECT DISTINCT c.programCode FROM Curricula c ORDER BY c.programCode ASC")
+    List<String> findDistinctProgramCodes();
+
+    @Query("SELECT DISTINCT c.year FROM Curricula c ORDER BY c.year ASC")
+    List<String> findDistinctYears();
+
+    @Query("SELECT DISTINCT c.semester FROM Curricula c ORDER BY c.semester ASC")
+    List<String> findDistinctSemesters();
+
+    @Query("SELECT DISTINCT c.courseCode FROM Curricula c ORDER BY c.courseCode ASC")
+    List<String> findDistinctCourseCodes();
 
     // Query by Program
     List<Curricula> findByProgramCode(String programCode);
@@ -51,23 +69,25 @@ public interface CurriculaRepository extends JpaRepository<Curricula, Long> {
     List<Curricula> findAllByProgram(String programCode);
 
     @Query(value = """
-            SELECT *
-            FROM cta_curricula
-            WHERE (:programCodes IS NULL OR program_code IN (:programCodes))
-              AND (:years IS NULL OR year IN (:years))
-              AND (:semesters IS NULL OR semester IN (:semesters))
-              AND (:courseCodes IS NULL OR course_code IN (:courseCodes))
+            SELECT cr.id, cr.program_title, cr.program_code, cr.year, cr.semester,
+                   cr.course_code, cr.course_title, cr.pre_requisite,
+                   cr.lec, cr.lab, cr.units
+            FROM cta_curricula cr
+            WHERE (COALESCE(?1) IS NULL OR program_code IN (?1))
+              AND (COALESCE(?2) IS NULL OR year IN (?2))
+              AND (COALESCE(?3) IS NULL OR semester IN (?3))
+              AND (COALESCE(?4) IS NULL OR course_code IN (?4))
               AND (
-                   :search IS NULL
-                   OR course_title LIKE %:search%
-                   OR course_code LIKE %:search%
+                   ?5 IS NULL
+                   OR course_title LIKE CONCAT('%', ?5, '%')
+                   OR course_code LIKE CONCAT('%', ?5, '%')
               )
             """, nativeQuery = true)
     List<Object[]> searchCurricula(
-            @Param("programCodes") List<String> programCodes,
-            @Param("years") List<String> years,
-            @Param("semesters") List<String> semesters,
-            @Param("courseCodes") List<String> courseCodes,
-            @Param("search") String search);
+            List<String> programCodes,
+            List<String> years,
+            List<String> semesters,
+            List<String> courseCodes,
+            String search);
 
 }
