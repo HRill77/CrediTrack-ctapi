@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.cta.creditrack.model.Student;
 
 @Repository
-public interface StudentRepositoy extends JpaRepository<Student, Long> {
+public interface StudentRepository extends JpaRepository<Student, Long> {
 
 }
