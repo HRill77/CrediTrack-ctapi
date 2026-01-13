@@ -12,6 +12,7 @@ public class CreditrackApplication implements CommandLineRunner {
 
 	public static void main(String[] args) {
 		SpringApplication.run(CreditrackApplication.class, args);
+		System.out.println("Credit Rack Application is running...");
 	}
 
 	public void run(String... args) throws Exception {
