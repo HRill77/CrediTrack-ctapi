@@ -4,6 +4,12 @@ spring:
   profiles:
     active: dev
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+      enabled: true
+
   # Local MariaDB datasource
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver

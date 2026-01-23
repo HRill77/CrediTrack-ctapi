@@ -24,11 +24,7 @@ public class Student {
     private String lastname;
     private String suffix;
     private String email;
-    private String phone;
-    private String address;
     private String yearLevel;
-    private LocalDate  dob;
-
     
 
 }
