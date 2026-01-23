@@ -108,6 +108,38 @@ public class UserController {
 
         return ResponseEntity.ok(exists);
     }
+
+    @PutMapping("/{userId}/status")
+    public ResponseEntity<?> updateUserStatus(
+            @PathVariable Long userId,
+            @RequestBody Map<String, Boolean> requestBody) {
+        try {
+            Boolean isActive = requestBody.get("isActive");
+            
+            if (isActive == null) {
+                return ResponseEntity.badRequest().body(createErrorResponse("isActive field is required"));
+            }
+            
+            userService.updateUserStatus(userId, isActive);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "User status updated successfully");
+            response.put("userId", userId);
+            response.put("isActive", isActive);
+            
+            log.info("User status updated for user ID: {} to isActive: {}", userId, isActive);
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request for user status update: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error updating user status", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("An error occurred while updating user status: " + e.getMessage()));
+        }
+    }
     
     
     private Map<String, Object> createErrorResponse(String message) {
