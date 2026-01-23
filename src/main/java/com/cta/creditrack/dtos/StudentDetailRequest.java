@@ -9,12 +9,16 @@ public record StudentDetailRequest(
     @Nullable String middlename,
     @Nullable String suffix,
     String email,
-    String phone,
-    String address,
+    // String phone,
+    // String address,
     String yearLevel,
-    String dob
-      
-
+    // String dob
+    String fromUniversity,
+    String fromCollege,
+    String fromProgram,
+    String toUniversity,
+    String toCollege,
+    String toProgram
 ) {
 
 }
