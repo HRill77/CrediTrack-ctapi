@@ -19,7 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.cta.creditrack.model.Curricula;
+import com.cta.creditrack.model.Course;
 import com.cta.creditrack.repository.CurriculaRepository;
+import com.cta.creditrack.repository.CourseRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +33,9 @@ import lombok.extern.slf4j.Slf4j;
 public class DataIngestionService {
 
     private final CurriculaRepository curriculaRepository;
+    private final CourseRepository courseRepository;
+    private final ObjectMapper objectMapper;
+
     private static final int BATCH_SIZE = 500;
 
     public void ingestCurriculaData(InputStream file, String fileType) throws IOException {
@@ -149,11 +155,18 @@ public class DataIngestionService {
     }
 
     private void saveAndFlushData(List<Curricula> curriculaList) {
-        for (int i = 0; i < curriculaList.size(); i += BATCH_SIZE) {
-            int end = Math.min(i + BATCH_SIZE, curriculaList.size());
-            List<Curricula> batch = curriculaList.subList(i, end);
-            curriculaRepository.saveAll(batch);
-            curriculaRepository.flush();
+        saveAndFlushDataGeneric(curriculaList, batch -> curriculaRepository.saveAll(batch));
+    }
+
+    private void saveAndFlushDataCourse(List<Course> courseList) {
+        saveAndFlushDataGeneric(courseList, batch -> courseRepository.saveAll(batch));
+    }
+
+    private <T> void saveAndFlushDataGeneric(List<T> dataList, java.util.function.Consumer<List<T>> saveOperation) {
+        for (int i = 0; i < dataList.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, dataList.size());
+            List<T> batch = dataList.subList(i, end);
+            saveOperation.accept(batch);
             log.info("Saved batch {} to {}", i / BATCH_SIZE + 1, end);
         }
     }
@@ -165,6 +178,16 @@ public class DataIngestionService {
                     errors.stream().limit(10).collect(Collectors.joining("\n")));
         } else {
             log.info("Upload completed successfully. {} records persisted.", curriculaList.size());
+        }
+    }
+
+    private void logResultsCourse(List<String> errors, List<Course> courseList) {
+        if (!errors.isEmpty()) {
+            log.info("Completed with {} parsing errors. First few errors:\n{}",
+                    errors.size(),
+                    errors.stream().limit(10).collect(Collectors.joining("\n")));
+        } else {
+            log.info("Upload completed successfully. {} records persisted.", courseList.size());
         }
     }
 
@@ -219,6 +242,14 @@ public class DataIngestionService {
         return existing;
     }
 
+    private Course updateExistingCourse(Course existing, Course updated) {
+        existing.setUnits(updated.getUnits());
+        existing.setPrerequisite(updated.getPrerequisite());
+        existing.setDescription(updated.getDescription());
+        existing.setCourseOutline(updated.getCourseOutline());
+        return existing;
+    }
+
     private boolean isRowEmpty(Row row) {
         if (row == null)
             return true;
@@ -261,7 +292,8 @@ public class DataIngestionService {
 
         for (Cell cell : headerRow) {
             String header = cell.getStringCellValue()
-                    .trim(); // normalize
+                    .trim()
+                    .toLowerCase(); // normalize to lowercase for case-insensitive matching
 
             headerMap.put(header, cell.getColumnIndex());
         }
@@ -270,7 +302,7 @@ public class DataIngestionService {
     }
 
     private String getString(Row row, Map<String, Integer> h, String key) {
-        Integer idx = h.get(key);
+        Integer idx = h.get(key.toLowerCase());
         if (idx == null)
             return null;
 
@@ -287,7 +319,7 @@ public class DataIngestionService {
     }
 
     private Integer getInt(Row row, Map<String, Integer> h, String key) {
-        Integer idx = h.get(key);
+        Integer idx = h.get(key.toLowerCase());
         if (idx == null)
             return null;
 
@@ -301,7 +333,7 @@ public class DataIngestionService {
     }
 
     private String getCsvString(String[] values, Map<String, Integer> h, String key) {
-        Integer idx = h.get(key);
+        Integer idx = h.get(key.toLowerCase());
         if (idx == null || idx >= values.length)
             return null;
 
@@ -310,7 +342,7 @@ public class DataIngestionService {
     }
 
     private Integer getCsvInt(String[] values, Map<String, Integer> h, String key) {
-        Integer idx = h.get(key);
+        Integer idx = h.get(key.toLowerCase());
         if (idx == null || idx >= values.length)
             return null;
 
@@ -322,8 +354,17 @@ public class DataIngestionService {
     }
 
     private void validateRequiredHeaders(Map<String, Integer> headerMap, String source) {
-        List<String> missingHeaders = REQUIRED_HEADERS.stream()
-                .filter(h -> !headerMap.containsKey(h))
+        validateRequiredHeaders(headerMap, source, CURRICULA_HEADERS);
+    }
+
+    private void validateRequiredHeadersForCourse(Map<String, Integer> headerMap, String source) {
+        validateRequiredHeaders(headerMap, source, COURSE_HEADERS);
+    }
+
+    private void validateRequiredHeaders(Map<String, Integer> headerMap, String source, List<String> requiredHeaders) {
+        log.info("Headers found in {}: {}", source, headerMap.keySet());
+        List<String> missingHeaders = requiredHeaders.stream()
+                .filter(h -> !headerMap.containsKey(h.toLowerCase()))
                 .collect(Collectors.toList());
 
         if (!missingHeaders.isEmpty()) {
@@ -332,7 +373,7 @@ public class DataIngestionService {
         }
     }
 
-    private static final List<String> REQUIRED_HEADERS = List.of(
+    private static final List<String> CURRICULA_HEADERS = List.of(
             "Program Title",
             "Program Code",
             "Year",
@@ -343,4 +384,207 @@ public class DataIngestionService {
             "LEC",
             "LAB",
             "Units");
+
+    private static final List<String> COURSE_HEADERS = List.of(
+            "Course Name",
+            "Units",
+            "Pre-requisite",
+            "Description",
+            "Course Outline");
+
+    // ===================== COURSE UPLOAD METHODS =====================
+
+    public void ingestCourseData(InputStream file, String fileType) throws IOException {
+        if ("csv".equalsIgnoreCase(fileType)) {
+            ingestCoursesFromCsv(file);
+        } else {
+            ingestCourseDataFromExcel(file);
+        }
+    }
+
+    public void ingestCourseDataFromExcel(InputStream file) throws IOException {
+        List<Course> courseList = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        try (Workbook workbook = WorkbookFactory.create(file)) {
+
+            int sheetCount = workbook.getNumberOfSheets();
+
+            for (int i = 0; i < sheetCount; i++) {
+                Sheet sheet = workbook.getSheetAt(i);
+                Map<String, Integer> headerMap = extractHeaderIndexMap(sheet);
+                log.info("{}" + headerMap);
+
+                validateRequiredHeadersForCourse(headerMap, sheet.getSheetName());
+
+                StreamSupport.stream(sheet.spliterator(), false)
+                        .skip(1) // skip header row
+                        .filter(row -> !isRowEmpty(row))
+                        .map(row -> {
+                            try {
+                                Course course = mapRowToCourseExcel(row, headerMap);
+                                return courseRepository.findByCourseName(course.getCourseName())
+                                        .map(existing -> updateExistingCourse(existing, course))
+                                        .orElse(course);
+                            } catch (Exception e) {
+                                String errorMsg = String.format(
+                                        "Sheet: %s, Row %d: %s",
+                                        sheet.getSheetName(),
+                                        row.getRowNum() + 1,
+                                        e.getMessage());
+                                log.warn(errorMsg, e);
+                                errors.add(errorMsg);
+                                return null;
+                            }
+                        })
+                        .filter(Objects::nonNull)
+                        .forEach(courseList::add);
+            }
+
+            saveAndFlushDataCourse(courseList);
+        } catch (Exception e) {
+            log.error("Failed to ingest course file", e);
+            throw e instanceof IOException ? (IOException) e : new IOException(e.getMessage());
+        }
+
+        logResultsCourse(errors, courseList);
+    }
+
+    public void ingestCoursesFromCsv(InputStream file) throws IOException {
+        List<Course> courseList = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        int rowNum = 1;
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file))) {
+            String line;
+            String headerLine = reader.readLine();
+            String[] headers = headerLine.split(",");
+
+            Map<String, Integer> headerMap = new HashMap<>();
+            for (int i = 0; i < headers.length; i++) {
+                headerMap.put(headers[i].trim().toLowerCase(), i);
+
+            }
+
+            validateRequiredHeadersForCourse(headerMap, "CSV");
+
+            while ((line = reader.readLine()) != null) {
+                rowNum++;
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+
+                try {
+                    Course c = mapRowToCourseCsv(line, headerMap);
+                    Optional<Course> existingData = courseRepository.findByCourseName(c.getCourseName());
+                    Course courseToSave = existingData
+                            .map(existing -> this.updateExistingCourse(existing, c))
+                            .orElse(c);
+                    courseList.add(courseToSave);
+
+                } catch (Exception e) {
+                    String errorMsg = String.format("Error processing row %d: %s", rowNum, e.getMessage());
+                    log.warn(errorMsg, e);
+                    errors.add(errorMsg);
+                }
+            }
+
+            saveAndFlushDataCourse(courseList);
+
+        } catch (Exception e) {
+            log.error("Failed to ingest curricula CSV file", e);
+            throw e instanceof IOException ? (IOException) e : new IOException(e.getMessage());
+        }
+
+        logResultsCourse(errors, courseList);
+
+    }
+
+    private String[] parseCSVLine(String line) {
+        List<String> result = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        boolean insideQuotes = false;
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+
+            if (c == '"') {
+                insideQuotes = !insideQuotes;
+            } else if (c == ',' && !insideQuotes) {
+                result.add(sb.toString().trim());
+                sb = new StringBuilder();
+            } else {
+                sb.append(c);
+            }
+        }
+
+        result.add(sb.toString().trim());
+        return result.toArray(new String[0]);
+    }
+
+    private Course mapRowToCourseCsv(String line, Map<String, Integer> h) throws Exception {
+        String[] values = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+
+        Course course = new Course();
+        course.setCourseName(getCsvString(values, h, "Course Name"));
+        course.setUnits(getCsvString(values, h, "Units"));
+        course.setPrerequisite(getCsvString(values, h, "Pre-requisite"));
+        course.setDescription(getCsvString(values, h, "Description"));
+        String rawOutline = getCsvString(values, h, "Course Outline");
+        course.setCourseOutline(convertCourseOutlineToJson(rawOutline));
+
+        return course;
+    }
+
+    private Course mapRowToCourseExcel(Row row, Map<String, Integer> h) {
+        Course c = new Course();
+
+        c.setCourseName(getString(row, h, "Course Name"));
+        c.setUnits(getString(row, h, "Units"));
+        c.setPrerequisite(getString(row, h, "Pre-requisite"));
+        c.setDescription(getString(row, h, "Description"));
+        String rawOutline = getString(row, h, "Course Outline");
+        c.setCourseOutline(convertCourseOutlineToJson(rawOutline));
+
+        return c;
+    }
+
+    private String getMapValue(Map<String, String> map, String... possibleKeys) {
+        for (String key : possibleKeys) {
+            String value = map.get(key);
+            if (value != null && !value.isEmpty()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private String convertCourseOutlineToJson(String courseOutline) {
+        if (courseOutline == null || courseOutline.isBlank()) {
+            return "[]";
+        }
+
+        try {
+            List<String> items = new ArrayList<>();
+
+            String normalized = courseOutline
+                    .replace("\r\n", "\n")
+                    .replace("\r", "\n");
+
+            String[] parts = normalized.split("(\\d+\\.\\s*)|\\n");
+
+            for (String part : parts) {
+                String trimmed = part.trim();
+                if (!trimmed.isEmpty()) {
+                    items.add(trimmed);
+                }
+            }
+
+            return objectMapper.writeValueAsString(items);
+
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid course outline format", e);
+        }
+    }
+
 }
