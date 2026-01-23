@@ -488,5 +488,37 @@ public class UserService {
         return ascending ? comparator : comparator.reversed();
     }
 
+    public void updateUserStatus(Long userId, Boolean isActive) {
+        try {
+            if (userId == null || userId <= 0) {
+                throw new IllegalArgumentException("User ID must be greater than 0");
+            }
+
+            if (isActive == null) {
+                throw new IllegalArgumentException("isActive status cannot be null");
+            }
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+            user.setIsActive(isActive);
+            userRepository.save(user);
+
+            // Log transaction for user status update
+            Transaction transaction = new Transaction();
+            transaction.setActionDetails("User status updated for: " + user.getEmail() + " - isActive: " + isActive);
+            transaction.setActionType("UPDATE_USER_STATUS");
+            transactionService.postTransaction(transaction, user.getId());
+
+            log.info("User status updated successfully for user ID: {} - isActive: {}", userId, isActive);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid parameters for user status update: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Error updating user status for user ID: {}", userId, e);
+            throw new RuntimeException("Error updating user status: " + e.getMessage(), e);
+        }
+    }
 
 }
