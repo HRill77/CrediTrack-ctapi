@@ -186,22 +186,28 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Invalid principal");
         }
+        User user = userDetails.getUser();
+    if (user == null) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("User data not found");
+    }
 
-        return ResponseEntity.ok(Map.of(
-                "username", userDetails.getUsername(),
-                "fullName", String.format(
-                        "%s, %s %s",
-                        userDetails.getUser().getLastname(),
-                        userDetails.getUser().getFirstname(),
-                        userDetails.getUser().getMiddlename() != null
-                                && !userDetails.getUser().getMiddlename().isBlank()
-                                        ? userDetails.getUser().getMiddlename().substring(0, 1).toUpperCase() + "."
-                                        : "")
-                        .trim(),
-                "authorities", userDetails.getAuthorities()
-                        .stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .toList()));
+         String middleInitial = (user.getMiddlename() != null && !user.getMiddlename().isBlank())
+            ? user.getMiddlename().substring(0, 1).toUpperCase() + "."
+            : "";
+
+    String fullName = String.format("%s, %s %s",
+            user.getLastname() != null ? user.getLastname() : "",
+            user.getFirstname() != null ? user.getFirstname() : "",
+            middleInitial).trim();
+
+    return ResponseEntity.ok(Map.of(
+            "username", userDetails.getUsername(),
+            "fullName", fullName,
+            "authorities", userDetails.getAuthorities()
+                    .stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .toList()));
 
     }
 
