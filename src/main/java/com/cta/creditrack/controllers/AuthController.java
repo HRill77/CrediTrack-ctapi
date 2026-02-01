@@ -2,7 +2,7 @@ package com.cta.creditrack.controllers;
 
 import com.cta.creditrack.dtos.*;
 import com.cta.creditrack.model.User;
-
+import com.cta.creditrack.repository.UserRepository;
 import com.cta.creditrack.services.AuthService;
 import com.cta.creditrack.services.UserService;
 import jakarta.servlet.http.*;
@@ -36,6 +36,7 @@ public class AuthController {
     private final AuthenticationManager authManager;
     private final BruteForceProtectionService bruteForceService;
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest req) {
@@ -186,7 +187,10 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Invalid principal");
         }
-        User user = userDetails.getUser();
+       User user = userRepository
+        .findById(userDetails.getUser().getId())
+        .orElseThrow(() -> new RuntimeException("User not found"));
+
     if (user == null) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("User data not found");
@@ -207,7 +211,11 @@ public class AuthController {
             "authorities", userDetails.getAuthorities()
                     .stream()
                     .map(GrantedAuthority::getAuthority)
-                    .toList()));
+                    .toList(),
+            "filename", user.getFilename() != null ? user.getFilename() : "",
+            "fileType", user.getFileType() != null ? user.getFileType() : "",
+            "fileData", user.getFileData() != null ? user.getFileData() : new byte[0],
+            "fileSize", user.getFileSize() != null ? user.getFileSize() : 0L));
 
     }
 
@@ -309,6 +317,7 @@ public class AuthController {
         }
     }
 
+    
 
 
 
