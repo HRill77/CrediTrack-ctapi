@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -61,6 +62,18 @@ public class User {
     /** Optional: when temp password expires */
     @Column(name = "password_expires_at")
     private Instant passwordExpiresAt;
+
+        @Column(name = "filename", nullable = false)
+    private String filename;
+
+    @Column(name = "file_type", nullable = false)
+    private String fileType;
+    @Lob
+    @Column(name = "file_data", nullable = false, columnDefinition = "LONGBLOB")
+    private byte[] fileData;
+    
+    @Column(name = "file_size")
+    private Long fileSize;
 
      // ---------------- RELATIONS ----------------
 

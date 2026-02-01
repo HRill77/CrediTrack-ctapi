@@ -423,7 +423,7 @@ public class DataIngestionService {
                         .map(row -> {
                             try {
                                 Course course = mapRowToCourseExcel(row, headerMap);
-                                return courseRepository.findByCourseName(course.getCourseName())
+                                return courseRepository.findByCourseNameIgnoreCase(course.getCourseName().toLowerCase())
                                         .map(existing -> updateExistingCourse(existing, course))
                                         .orElse(course);
                             } catch (Exception e) {
@@ -476,7 +476,7 @@ public class DataIngestionService {
 
                 try {
                     Course c = mapRowToCourseCsv(line, headerMap);
-                    Optional<Course> existingData = courseRepository.findByCourseName(c.getCourseName());
+                    Optional<Course> existingData = courseRepository.findByCourseNameIgnoreCase(c.getCourseName().toLowerCase());
                     Course courseToSave = existingData
                             .map(existing -> this.updateExistingCourse(existing, c))
                             .orElse(c);
@@ -560,31 +560,33 @@ public class DataIngestionService {
     }
 
     private String convertCourseOutlineToJson(String courseOutline) {
-        if (courseOutline == null || courseOutline.isBlank()) {
-            return "[]";
-        }
-
-        try {
-            List<String> items = new ArrayList<>();
-
-            String normalized = courseOutline
-                    .replace("\r\n", "\n")
-                    .replace("\r", "\n");
-
-            String[] parts = normalized.split("(\\d+\\.\\s*)|\\n");
-
-            for (String part : parts) {
-                String trimmed = part.trim();
-                if (!trimmed.isEmpty()) {
-                    items.add(trimmed);
-                }
-            }
-
-            return objectMapper.writeValueAsString(items);
-
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid course outline format", e);
-        }
+    if (courseOutline == null || courseOutline.isBlank()) {
+        return "[]";
     }
+
+    try {
+        List<String> items = new ArrayList<>();
+
+        String normalized = courseOutline
+                .replace("\r\n", "\n")
+                .replace("\r", "\n");
+
+        // Split by newline ONLY
+        String[] lines = normalized.split("\\n");
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (!trimmed.isEmpty()) {
+                items.add(trimmed); // keeps numbering intact
+            }
+        }
+
+        return objectMapper.writeValueAsString(items);
+
+    } catch (Exception e) {
+        throw new IllegalArgumentException("Invalid course outline format", e);
+    }
+}
+
 
 }
