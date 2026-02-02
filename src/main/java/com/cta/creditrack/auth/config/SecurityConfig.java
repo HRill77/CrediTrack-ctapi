@@ -43,7 +43,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
               .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/check-temp-password", "/api/auth/update-temp-password",
               "/api/auth/forgot-password", "/api/ingest/curricula", "/api/student/**" ,"/api/files/**" ,"/api/ingest/**").permitAll()
-              .requestMatchers("/api/auth/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_USER", "ROLE_ADMIN")
+              .requestMatchers("/api/auth/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_USER", "ROLE_ADMIN", "ROLE_PROGRAM_HEAD")
               .anyRequest().authenticated()
         )
         .authenticationProvider(daoAuthProvider())

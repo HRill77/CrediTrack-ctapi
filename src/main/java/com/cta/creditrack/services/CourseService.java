@@ -34,7 +34,7 @@ public class CourseService {
     }
 
     public Course getCourseBName(String courseName) {
-        return courseRepository.findByCourseName(courseName)
+        return courseRepository.findByCourseNameIgnoreCase(courseName)
                 .orElseThrow(() -> new IllegalArgumentException("Course not found with name: " + courseName));
     }
 
@@ -61,10 +61,10 @@ public class CourseService {
                 throw new IllegalArgumentException("Search text cannot exceed 255 characters");
             }
 
-            // Execute search
+            // Execute searchs
             List<Course> results = courseName == null || courseName.isEmpty() 
                     ? courseRepository.findAll() 
-                    : courseRepository.findAllByCourseName(courseName).stream().toList();
+                    : courseRepository.searchCourseByName(courseName).stream().toList();
 
             log.info("Found {} course records", results.size());
 
@@ -74,10 +74,10 @@ public class CourseService {
                     .collect(Collectors.toList());
 
             // Post transaction for course search activity
-            Transaction transaction = new Transaction();
-            transaction.setActionDetails("Course search - Course Name: " + courseName);
-            transaction.setActionType("COURSE_SEARCH");
-            transactionService.postTransaction(transaction, null);
+            // Transaction transaction = new Transaction();
+            // transaction.setActionDetails("Course search - Course Name: " + courseName);
+            // transaction.setActionType("COURSE_SEARCH");
+            // transactionService.postTransaction(transaction, null);
 
             // Apply sorting if requested
             if (pageable.getSort().isSorted()) {

@@ -2,7 +2,7 @@ package com.cta.creditrack.controllers;
 
 import com.cta.creditrack.dtos.*;
 import com.cta.creditrack.model.User;
-
+import com.cta.creditrack.repository.UserRepository;
 import com.cta.creditrack.services.AuthService;
 import com.cta.creditrack.services.UserService;
 import jakarta.servlet.http.*;
@@ -36,6 +36,7 @@ public class AuthController {
     private final AuthenticationManager authManager;
     private final BruteForceProtectionService bruteForceService;
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest req) {
@@ -186,22 +187,35 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Invalid principal");
         }
+       User user = userRepository
+        .findById(userDetails.getUser().getId())
+        .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return ResponseEntity.ok(Map.of(
-                "username", userDetails.getUsername(),
-                "fullName", String.format(
-                        "%s, %s %s",
-                        userDetails.getUser().getLastname(),
-                        userDetails.getUser().getFirstname(),
-                        userDetails.getUser().getMiddlename() != null
-                                && !userDetails.getUser().getMiddlename().isBlank()
-                                        ? userDetails.getUser().getMiddlename().substring(0, 1).toUpperCase() + "."
-                                        : "")
-                        .trim(),
-                "authorities", userDetails.getAuthorities()
-                        .stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .toList()));
+    if (user == null) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("User data not found");
+    }
+
+         String middleInitial = (user.getMiddlename() != null && !user.getMiddlename().isBlank())
+            ? user.getMiddlename().substring(0, 1).toUpperCase() + "."
+            : "";
+
+    String fullName = String.format("%s, %s %s",
+            user.getLastname() != null ? user.getLastname() : "",
+            user.getFirstname() != null ? user.getFirstname() : "",
+            middleInitial).trim();
+
+    return ResponseEntity.ok(Map.of(
+            "username", userDetails.getUsername(),
+            "fullName", fullName,
+            "authorities", userDetails.getAuthorities()
+                    .stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .toList(),
+            "filename", user.getFilename() != null ? user.getFilename() : "",
+            "fileType", user.getFileType() != null ? user.getFileType() : "",
+            "fileData", user.getFileData() != null ? user.getFileData() : new byte[0],
+            "fileSize", user.getFileSize() != null ? user.getFileSize() : 0L));
 
     }
 
@@ -303,6 +317,7 @@ public class AuthController {
         }
     }
 
+    
 
 
 
