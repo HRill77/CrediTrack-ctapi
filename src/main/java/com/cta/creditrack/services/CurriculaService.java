@@ -88,11 +88,11 @@ public class CurriculaService {
                     .collect(Collectors.toList());
 
             // Post transaction for curricula search activity
-            Transaction transaction = new Transaction();
-            transaction.setActionDetails("Curricula search - Program Codes: " + programCodes + ", Years: " + years +
-                    ", Semesters: " + semesters + ", Course Codes: " + courseCodes + ", Search Text: " + searchText);
-            transaction.setActionType("CURRICULA_SEARCH");
-            transactionService.postTransaction(transaction, null);
+            // Transaction transaction = new Transaction();
+            // transaction.setActionDetails("Curricula search - Program Codes: " + programCodes + ", Years: " + years +
+            //         ", Semesters: " + semesters + ", Course Codes: " + courseCodes + ", Search Text: " + searchText);
+            // transaction.setActionType("CURRICULA_SEARCH");
+            // transactionService.postTransaction(transaction, null);
 
             // Apply sorting if requested
             if (pageable.getSort().isSorted()) {

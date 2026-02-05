@@ -2,8 +2,13 @@ package com.cta.creditrack.controllers;
 
 import com.cta.creditrack.dtos.UserSearchRequest;
 import com.cta.creditrack.dtos.UserSearchResult;
+import com.cta.creditrack.auth.model.CustomUserDetials;
+import com.cta.creditrack.dtos.UpdatePasswordRequest;
+import com.cta.creditrack.dtos.UpdateUserProfileRequest;
 import com.cta.creditrack.model.Program;
 import com.cta.creditrack.model.Role;
+import com.cta.creditrack.model.User;
+import com.cta.creditrack.repository.UserRepository;
 import com.cta.creditrack.services.ProgramService;
 import com.cta.creditrack.services.RoleService;
 import com.cta.creditrack.services.UserService;
@@ -16,9 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.method.P;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -36,6 +44,7 @@ public class UserController {
     private final UserService userService;
     private final RoleService roleService;
     private final ProgramService programService;
+    private final UserRepository userRepository;
 
     @PostMapping("/search")
     public ResponseEntity<?> searchUsers(
@@ -140,7 +149,94 @@ public class UserController {
                     .body(createErrorResponse("An error occurred while updating user status: " + e.getMessage()));
         }
     }
+
+    @PutMapping("/users/{userId}/whitelist-status")
+public ResponseEntity<?> updateWhitelistStatus(
+        @PathVariable Long userId, 
+        @RequestBody Map<String, Boolean> body) {
+    try {
+        Boolean isWhitelisted = body.get("isWhitelisted");
+        userService.updateWhitelistStatus(userId, isWhitelisted);
+        return ResponseEntity.ok().build();
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Failed to update whitelist status");
+    }
+}
+
+    @PostMapping("/update-profile")
+    public ResponseEntity<?> updateProfile(
+            Authentication authentication,
+            @RequestPart(value = "profile") @Valid UpdateUserProfileRequest profileRequest,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile) {
+        try {
+             Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof CustomUserDetials userDetails)) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Invalid principal");
+        }
+        User user = userRepository
+        .findById(userDetails.getUser().getId())
+        .orElseThrow(() -> new RuntimeException("User not found"));
+
+            String email = user.getEmail();
+            log.info("Attempting to update profile for user: {}", email);
+
+            userService.updateUserProfile(email, profileRequest, imageFile);
+
+            log.info("Profile updated successfully for user: {}", email);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Profile updated successfully",
+                    "email", email,
+                    "timestamp", Instant.now()
+            ));
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Failed to update profile: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "error", e.getMessage(),
+                    "timestamp", Instant.now()
+            ));
+
+        } catch (Exception e) {
+            log.error("Unexpected error while updating profile", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "error", "An unexpected error occurred",
+                    "timestamp", Instant.now()
+            ));
+        }
+    }
     
+    @PostMapping("/update-password")
+    public ResponseEntity<?> updatePassword(@Valid @RequestBody UpdatePasswordRequest req) {
+        try {
+            log.info("Attempting to update password for email: {}", req.email());
+            
+            userService.updatePassword(req.email(), req.currentPassword(), req.newPassword());
+            
+            log.info("Password updated successfully for email: {}", req.email());
+            return ResponseEntity.ok(Map.of(
+                    "message", "Password updated successfully",
+                    "email", req.email(),
+                    "timestamp", Instant.now()
+            ));
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Failed to update password: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "error", e.getMessage(),
+                    "timestamp", Instant.now()
+            ));
+            
+        } catch (Exception e) {
+            log.error("Unexpected error while updating password", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "error", "An unexpected error occurred",
+                    "timestamp", Instant.now()
+            ));
+        }
+    }
     
     private Map<String, Object> createErrorResponse(String message) {
         Map<String, Object> errorResponse = new HashMap<>();
