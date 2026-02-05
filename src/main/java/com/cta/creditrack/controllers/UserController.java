@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.method.P;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -149,6 +149,20 @@ public class UserController {
                     .body(createErrorResponse("An error occurred while updating user status: " + e.getMessage()));
         }
     }
+
+    @PutMapping("/users/{userId}/whitelist-status")
+public ResponseEntity<?> updateWhitelistStatus(
+        @PathVariable Long userId, 
+        @RequestBody Map<String, Boolean> body) {
+    try {
+        Boolean isWhitelisted = body.get("isWhitelisted");
+        userService.updateWhitelistStatus(userId, isWhitelisted);
+        return ResponseEntity.ok().build();
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Failed to update whitelist status");
+    }
+}
 
     @PostMapping("/update-profile")
     public ResponseEntity<?> updateProfile(
