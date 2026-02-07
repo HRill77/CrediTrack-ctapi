@@ -247,6 +247,7 @@ public class DataIngestionService {
         existing.setPrerequisite(updated.getPrerequisite());
         existing.setDescription(updated.getDescription());
         existing.setCourseOutline(updated.getCourseOutline());
+        existing.setSyllabusVersion(existing.getSyllabusVersion()); // Increment syllabus version on update
         return existing;
     }
 
@@ -390,7 +391,8 @@ public class DataIngestionService {
             "Units",
             "Pre-requisite",
             "Description",
-            "Course Outline");
+            "Course Outline",
+            "Version");
 
     // ===================== COURSE UPLOAD METHODS =====================
 
@@ -423,7 +425,7 @@ public class DataIngestionService {
                         .map(row -> {
                             try {
                                 Course course = mapRowToCourseExcel(row, headerMap);
-                                return courseRepository.findByCourseNameIgnoreCase(course.getCourseName().toLowerCase())
+                                return courseRepository.findByCourseNameIgnoreCaseAndSyllabusVersion(course.getCourseName().toLowerCase(), course.getSyllabusVersion())
                                         .map(existing -> updateExistingCourse(existing, course))
                                         .orElse(course);
                             } catch (Exception e) {
@@ -476,7 +478,7 @@ public class DataIngestionService {
 
                 try {
                     Course c = mapRowToCourseCsv(line, headerMap);
-                    Optional<Course> existingData = courseRepository.findByCourseNameIgnoreCase(c.getCourseName().toLowerCase());
+                    Optional<Course> existingData = courseRepository.findByCourseNameIgnoreCaseAndSyllabusVersion(c.getCourseName().toLowerCase(), c.getSyllabusVersion());
                     Course courseToSave = existingData
                             .map(existing -> this.updateExistingCourse(existing, c))
                             .orElse(c);
@@ -545,6 +547,7 @@ public class DataIngestionService {
         c.setDescription(getString(row, h, "Description"));
         String rawOutline = getString(row, h, "Course Outline");
         c.setCourseOutline(convertCourseOutlineToJson(rawOutline));
+        c.setSyllabusVersion(getInt(row, h, "Version"));
 
         return c;
     }
