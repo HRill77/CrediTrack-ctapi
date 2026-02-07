@@ -33,7 +33,7 @@ public class Course {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, length = 255)
     private String courseName;
 
     private String units;
@@ -54,4 +54,8 @@ public class Course {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+   @Column(name = "syllabus_version", nullable = false)
+    private Integer syllabusVersion;
+
 }
