@@ -1,7 +1,11 @@
 package com.cta.creditrack.controllers;
 
+import com.cta.creditrack.dtos.CurriculaCreateRequest;
+import com.cta.creditrack.dtos.CurriculaDeleteRequest;
 import com.cta.creditrack.dtos.CurriculaSearchRequest;
 import com.cta.creditrack.dtos.CurriculaSearchResult;
+import com.cta.creditrack.dtos.CurriculaUpdateRequest;
+import com.cta.creditrack.model.Curricula;
 import com.cta.creditrack.services.CurriculaService;
 
 import jakarta.validation.Valid;
@@ -78,4 +82,113 @@ public class CurriculaController {
         errorResponse.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         return errorResponse;
     }
+
+    @PostMapping("/create")
+    public ResponseEntity<?> createCurricula(@Valid @RequestBody CurriculaCreateRequest request) {
+        try {
+            log.info("Creating new curricula - programCode: {}, courseCode: {}", 
+                    request.programCode(), request.courseCode());
+
+            Curricula curricula = curriculaService.createCurricula(request);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Curricula created successfully");
+            response.put("data", curricula);
+            response.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            log.info("Successfully created curricula with ID: {}", curricula.getId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Bad request in curricula creation: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error creating curricula", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("An error occurred while creating curricula: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<?> updateCurricula(@Valid @RequestBody CurriculaUpdateRequest request) {
+        try {
+            log.info("Updating curricula with ID: {}", request.id());
+
+            Curricula curricula = curriculaService.updateCurricula(request);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Curricula updated successfully");
+            response.put("data", curricula);
+            response.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            log.info("Successfully updated curricula with ID: {}", curricula.getId());
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Bad request in curricula update: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        } catch (RuntimeException e) {
+            log.warn("Curricula not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(createErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error updating curricula", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("An error occurred while updating curricula: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteCurricula(@PathVariable Long id) {
+        try {
+            log.info("Deleting curricula with ID: {}", id);
+
+            curriculaService.deleteCurriculaById(id);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Curricula deleted successfully");
+            response.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            log.info("Successfully deleted curricula with ID: {}", id);
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            log.warn("Curricula not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(createErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error deleting curricula", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("An error occurred while deleting curricula: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/delete-multiple")
+    public ResponseEntity<?> deleteMultipleCurricula(@Valid @RequestBody CurriculaDeleteRequest request) {
+        try {
+            log.info("Deleting {} curricula records", request.ids().size());
+
+            Map<String, Object> deleteResult = curriculaService.deleteMultipleCurricula(request.ids());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Curricula deletion completed");
+            response.put("data", deleteResult);
+            response.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Bad request in curricula deletion: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error deleting multiple curricula", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("An error occurred while deleting curricula: " + e.getMessage()));
+        }
+    }
+    
 }

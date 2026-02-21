@@ -41,7 +41,7 @@ public class StudentService {
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
 
     @Transactional
-public void saveStudent(StudentDetailRequest sdr,
+public Long saveStudent(StudentDetailRequest sdr,
                         MultipartFile torFile,
                         MultipartFile cdFile) {
     
@@ -109,10 +109,12 @@ public void saveStudent(StudentDetailRequest sdr,
         fileUpload.setTorFileData(torFile.getBytes());
         fileUpload.setTorFileSize(torFile.getSize());
 
-        fileUpload.setCdFilename(cdFile.getOriginalFilename());
-        fileUpload.setCdFileType(cdFile.getContentType());
-        fileUpload.setCdFileData(cdFile.getBytes());
-        fileUpload.setCdFileSize(cdFile.getSize());
+        if (cdFile != null && !cdFile.isEmpty()) {
+            fileUpload.setCdFilename(cdFile.getOriginalFilename());
+            fileUpload.setCdFileType(cdFile.getContentType());
+            fileUpload.setCdFileData(cdFile.getBytes());
+            fileUpload.setCdFileSize(cdFile.getSize());
+        }
 
         fileUpload.setStudent(student);
         fileUploadRepository.save(fileUpload);
@@ -143,8 +145,9 @@ public void saveStudent(StudentDetailRequest sdr,
         // force rollback of main transaction
         throw new RuntimeException(e);
     }
-}
-
+    
+    return student.getId();
+                        }
 
     public boolean emailExists(String email) {
         try {

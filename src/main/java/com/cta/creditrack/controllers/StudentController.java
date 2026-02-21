@@ -39,12 +39,15 @@ public class StudentController {
     public ResponseEntity<?> saveStudent(
             @ModelAttribute StudentDetailRequest req,
             @RequestParam("torFile") MultipartFile torFile,
-            @RequestParam("cdFile") MultipartFile cdFile
+            @RequestParam(value = "cdFile", required = false) MultipartFile cdFile
     ){
        try {
-        studentService.saveStudent(req, torFile, cdFile);
+        Long studentId = studentService.saveStudent(req, torFile, cdFile);
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            Map.of("message", "Student details saved successfully")
+            Map.of(
+                "message", "Student details saved successfully",
+                "studentId", studentId
+            )
         );
 
         //  User user = authService.registerUser(req);

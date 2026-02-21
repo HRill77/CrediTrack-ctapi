@@ -78,7 +78,7 @@ public interface CurriculaRepository extends JpaRepository<Curricula, Long> {
               AND (COALESCE(?3) IS NULL OR semester IN (?3))
               AND (COALESCE(?4) IS NULL OR course_code IN (?4))
               AND (
-                   ?5 IS NULL
+                   ?5  IS NULL
                    OR course_title LIKE CONCAT('%', ?5, '%')
                    OR course_code LIKE CONCAT('%', ?5, '%')
               )
