@@ -36,12 +36,13 @@ public class TranscriptProcessingService {
     private final CurriculaRepository curriculaRepository;
     private final TranscriptEvaluationRepository evaluationRepository;
 
-
-    public List<TranscriptEvaluationResponse> processTranscriptEvaluation(BulkTranscriptRequest request, String program) {
+    public List<TranscriptEvaluationResponse> processTranscriptEvaluation(BulkTranscriptRequest request,
+            String program) {
         List<TranscriptEvaluation> evaluations = new java.util.ArrayList<>();
         try {
-            log.info("Starting transcript evaluation for program: {} with {} transcripts", program, request.transcripts().size());
-            
+            log.info("Starting transcript evaluation for program: {} with {} transcripts", program,
+                    request.transcripts().size());
+
             Student student = studentRepository.findById(request.studentId())
                     .orElseThrow(() -> new RuntimeException("Student not found"));
             log.info("Student found: {}", student.getId());
@@ -50,15 +51,14 @@ public class TranscriptProcessingService {
             deleteStudentTranscriptData(request.studentId());
             log.info("Previous transcript data deleted for student: {}", student.getId());
 
-            List<Curricula> curriculaList =
-                    curriculaRepository.findByProgramTitle(program);
+            List<Curricula> curriculaList = curriculaRepository.findByProgramTitle(program);
             log.info("Found {} curricula for program: {}", curriculaList.size(), program);
 
             for (TranscriptRequest dto : request.transcripts()) {
                 try {
                     log.info("Processing transcript: {} with {} credits", dto.courseName(), dto.credits());
-                    
-                    //Save Transcript
+
+                    // Save Transcript
                     Transcript transcript = new Transcript();
                     transcript.setYear(dto.year());
                     transcript.setSubjectCode(dto.subjectCode());
@@ -79,16 +79,16 @@ public class TranscriptProcessingService {
                                 transcript.getCourseName(),
                                 curricula.getCourseTitle(),
                                 transcript.getCredits(),
-                                curricula.getUnits()
-                        );
+                                curricula.getUnits());
 
                         if (score > highestScore) {
                             highestScore = score;
                             bestMatch = curricula;
                         }
                     }
-                    
-                    log.info("Best match found {} with score: {}", bestMatch != null ? bestMatch.getCourseTitle() : "NONE", highestScore);
+
+                    log.info("Best match found {} with score: {}",
+                            bestMatch != null ? bestMatch.getCourseTitle() : "NONE", highestScore);
 
                     // SAVE EVALUATION
                     TranscriptEvaluation evaluation = new TranscriptEvaluation();
@@ -97,24 +97,32 @@ public class TranscriptProcessingService {
                     evaluation.setConfidenceScore(highestScore);
                     evaluation.setEvaluationStatus(mapStatus(highestScore));
                     evaluation.setDecisionType(
-                            highestScore >= 85 ? DecisionType.AUTO : DecisionType.MANUAL
-                    );
+                            highestScore >= 85 ? DecisionType.AUTO : DecisionType.MANUAL);
                     evaluation.setFinalApproved(highestScore >= 85);
-                    
+
                     // Determine remarks based on grade and units
                     String remarks = generateRemarks(highestScore);
-                    
-                    // Check if grade is below 75 or 3.0
+
+                    // Check if grade is below 75 and higher than 3.0
                     double gradeValue = Double.parseDouble(dto.grade());
-                    if (gradeValue < 3.0) {
-                        remarks = "Failed grade";
+
+                    if (gradeValue <= 5.0) {
+                        // GPA scale
+                        if (gradeValue > 3.0) {
+                            remarks = "Failed grade";
+                        }
+                    } else {
+                        // Percentage scale
+                        if (gradeValue < 75) {
+                            remarks = "Failed grade";
+                        }
                     }
                     // Check if credits are lower than units
-                    else if (bestMatch != null && transcript.getCredits() != null && bestMatch.getUnits() != null 
+                    if (bestMatch != null && transcript.getCredits() != null && bestMatch.getUnits() != null
                             && transcript.getCredits() < bestMatch.getUnits()) {
                         remarks = "Insufficient units";
                     }
-                    
+
                     evaluation.setRemarks(remarks);
 
                     evaluationRepository.save(evaluation);
@@ -135,16 +143,22 @@ public class TranscriptProcessingService {
     }
 
     private EvaluationStatus mapStatus(double score) {
-        if (score >= 85) return EvaluationStatus.HIGH_CONFIDENCE_MATCH;
-        if (score >= 75) return EvaluationStatus.MEDIUM_CONFIDENCE_MATCH;
-        if (score >= 60) return EvaluationStatus.LOW_CONFIDENCE_MATCH;
+        if (score >= 85)
+            return EvaluationStatus.HIGH_CONFIDENCE_MATCH;
+        if (score >= 75)
+            return EvaluationStatus.MEDIUM_CONFIDENCE_MATCH;
+        if (score >= 60)
+            return EvaluationStatus.LOW_CONFIDENCE_MATCH;
         return EvaluationStatus.NO_MATCH;
     }
 
     private String generateRemarks(double score) {
-        if (score >= 85) return "Equivalent course found";
-        if (score >= 75) return "Needs review";
-        if (score >= 60) return "Low similarity";
+        if (score >= 85)
+            return "Equivalent course found";
+        if (score >= 75)
+            return "Needs review";
+        if (score >= 60)
+            return "Low similarity";
         return "Course mismatch";
     }
 
@@ -152,7 +166,8 @@ public class TranscriptProcessingService {
      * Deletes all transcript and transcript_evaluation records for a given student.
      * This is called before processing new transcript data to ensure clean data.
      * 
-     * @param studentId the ID of the student whose transcript data should be deleted
+     * @param studentId the ID of the student whose transcript data should be
+     *                  deleted
      */
     private void deleteStudentTranscriptData(Long studentId) {
         try {
@@ -162,7 +177,7 @@ public class TranscriptProcessingService {
                 evaluationRepository.deleteAll(evaluations);
                 log.info("Deleted {} transcript evaluation records for student: {}", evaluations.size(), studentId);
             }
-            
+
             // Delete all transcript records
             List<Transcript> transcripts = transcriptRepository.findByStudentId(studentId);
             if (!transcripts.isEmpty()) {
@@ -194,8 +209,7 @@ public class TranscriptProcessingService {
                     t.getGrade(),
                     t.getCredits(),
                     t.getCreatedAt(),
-                    t.getUpdatedAt()
-            );
+                    t.getUpdatedAt());
         }
 
         CurriculaResponse curriculaResponse = null;
@@ -212,8 +226,7 @@ public class TranscriptProcessingService {
                     c.getPreRequisite(),
                     c.getLec(),
                     c.getLab(),
-                    c.getUnits()
-            );
+                    c.getUnits());
         }
 
         return new TranscriptEvaluationResponse(
@@ -226,7 +239,6 @@ public class TranscriptProcessingService {
                 evaluation.getFinalApproved(),
                 evaluation.getRemarks(),
                 evaluation.getCreatedAt(),
-                evaluation.getUpdatedAt()
-        );
+                evaluation.getUpdatedAt());
     }
 }
