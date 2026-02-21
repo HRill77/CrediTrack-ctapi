@@ -329,6 +329,14 @@ public class UserService {
         }
     }
 
+    public void updateWhitelistStatus(Long userId, Boolean isWhitelisted) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIsWhitelisted(isWhitelisted);
+        user.setUpdatedAt(Instant.now());
+        userRepository.save(user);
+    }
+
     // public void sendTemporaryPassword(String email) {
     // log.info("Initiating password reset for email: {}", email);
 
@@ -443,6 +451,7 @@ public class UserService {
                 .email(dto.email().toLowerCase())
                 .password(passwordEncoder.encode(generatedPassword))
                 .phoneNumber(dto.phone())
+                .isWhitelisted(true)
                 .isActive(true)
                 .build();
 

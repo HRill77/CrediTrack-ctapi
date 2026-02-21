@@ -51,6 +51,9 @@ public class User {
     @Column(nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "is_whitelisted")
+    private Boolean isWhitelisted;
+
     /** Forces user to change password on login */
     @Column(nullable = false)
     private Boolean mustChangePassword = true;
