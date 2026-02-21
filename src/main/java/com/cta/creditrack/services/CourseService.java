@@ -1,5 +1,6 @@
 package com.cta.creditrack.services;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -48,6 +49,61 @@ public class CourseService {
         }
         courseRepository.deleteById(id);
         log.info("Course deleted with ID: {}", id);
+    }
+
+    public java.util.Map<String, Object> deleteMultipleCourses(List<Long> ids) {
+        try {
+            log.info("Deleting {} course records", ids.size());
+
+            if (ids == null || ids.isEmpty()) {
+                throw new IllegalArgumentException("IDs list cannot be empty");
+            }
+
+            long successCount = 0;
+            long failureCount = 0;
+            List<String> failedIds = new ArrayList<>();
+
+            for (Long id : ids) {
+                try {
+                    if (courseRepository.existsById(id)) {
+                        courseRepository.deleteById(id);
+                        successCount++;
+                    } else {
+                        failureCount++;
+                        failedIds.add("ID " + id + " not found");
+                    }
+                } catch (Exception e) {
+                    failureCount++;
+                    failedIds.add("ID " + id + ": " + e.getMessage());
+                }
+            }
+
+            log.info("Deleted {} course records, {} failed", successCount, failureCount);
+
+            // Post transaction for multiple course deletion
+            try {
+                Transaction transaction = new Transaction();
+                transaction.setActionDetails("Deleted " + successCount + " course records out of " + ids.size());
+                transaction.setActionType("COURSE_BULK_DELETE");
+                transactionService.postTransaction(transaction, null);
+            } catch (Exception txnError) {
+                log.error("Failed to log bulk deletion transaction", txnError);
+            }
+
+            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            result.put("totalRequested", ids.size());
+            result.put("successCount", successCount);
+            result.put("failureCount", failureCount);
+            if (!failedIds.isEmpty()) {
+                result.put("failures", failedIds);
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("Error deleting multiple courses", e);
+            throw new RuntimeException("Error deleting multiple courses: " + e.getMessage(), e);
+        }
     }
 
     public Page<CourseSearchResult> searchCourses(CourseSearchRequest request, Pageable pageable) {

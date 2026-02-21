@@ -6,17 +6,23 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.cta.creditrack.dtos.CurriculaCreateRequest;
 import com.cta.creditrack.dtos.CurriculaSearchRequest;
 import com.cta.creditrack.dtos.CurriculaSearchResult;
+import com.cta.creditrack.dtos.CurriculaUpdateRequest;
+import com.cta.creditrack.model.Curricula;
 import com.cta.creditrack.model.Transaction;
 import com.cta.creditrack.repository.CurriculaRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -208,5 +214,193 @@ public class CurriculaService {
         }
 
         return ascending ? comparator : comparator.reversed();
+    }
+
+    public Curricula createCurricula(CurriculaCreateRequest request) {
+        try {
+            log.info("Creating new curricula - programCode: {}, courseCode: {}", 
+                    request.programCode(), request.courseCode());
+
+            Curricula curricula = new Curricula();
+            curricula.setProgramTitle(request.programTitle());
+            curricula.setProgramCode(request.programCode());
+            curricula.setYear(request.year());
+            curricula.setSemester(request.semester());
+            curricula.setCourseCode(request.courseCode());
+            curricula.setCourseTitle(request.courseTitle());
+            curricula.setPreRequisite(request.preRequisite());
+            curricula.setLec(request.lec());
+            curricula.setLab(request.lab());
+            curricula.setUnits(request.units());
+
+            Curricula savedCurricula = curriculaRepository.save(curricula);
+            
+            log.info("Successfully created curricula with ID: {}", savedCurricula.getId());
+            
+            // Post transaction for curricula creation
+            try {
+                Transaction transaction = new Transaction();
+                transaction.setActionDetails("Created curricula - Program: " + request.programCode() + 
+                        ", Course: " + request.courseCode());
+                transaction.setActionType("CURRICULA_CREATE");
+                transactionService.postTransaction(transaction, null);
+            } catch (Exception txnError) {
+                log.error("Failed to log creation transaction", txnError);
+            }
+
+            return savedCurricula;
+        } catch (Exception e) {
+            log.error("Error creating curricula", e);
+            throw new RuntimeException("Error creating curricula: " + e.getMessage(), e);
+        }
+    }
+
+    public Curricula updateCurricula(CurriculaUpdateRequest request) {
+        try {
+            log.info("Updating curricula with ID: {}", request.id());
+
+            Curricula curricula = curriculaRepository.findById(request.id())
+                    .orElseThrow(() -> new RuntimeException("Curricula not found with ID: " + request.id()));
+
+            // Update only non-null fields
+            if (request.programTitle() != null) {
+                curricula.setProgramTitle(request.programTitle());
+            }
+            if (request.programCode() != null) {
+                curricula.setProgramCode(request.programCode());
+            }
+            if (request.year() != null) {
+                curricula.setYear(request.year());
+            }
+            if (request.semester() != null) {
+                curricula.setSemester(request.semester());
+            }
+            if (request.courseCode() != null) {
+                curricula.setCourseCode(request.courseCode());
+            }
+            if (request.courseTitle() != null) {
+                curricula.setCourseTitle(request.courseTitle());
+            }
+            if (request.preRequisite() != null) {
+                curricula.setPreRequisite(request.preRequisite());
+            }
+            if (request.lec() != null) {
+                curricula.setLec(request.lec());
+            }
+            if (request.lab() != null) {
+                curricula.setLab(request.lab());
+            }
+            if (request.units() != null) {
+                curricula.setUnits(request.units());
+            }
+
+            Curricula updatedCurricula = curriculaRepository.save(curricula);
+            
+            log.info("Successfully updated curricula with ID: {}", updatedCurricula.getId());
+            
+            // Post transaction for curricula update
+            try {
+                Transaction transaction = new Transaction();
+                transaction.setActionDetails("Updated curricula with ID: " + request.id());
+                transaction.setActionType("CURRICULA_UPDATE");
+                transactionService.postTransaction(transaction, null);
+            } catch (Exception txnError) {
+                log.error("Failed to log update transaction", txnError);
+            }
+
+            return updatedCurricula;
+        } catch (RuntimeException e) {
+            log.error("Error updating curricula: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Error updating curricula", e);
+            throw new RuntimeException("Error updating curricula: " + e.getMessage(), e);
+        }
+    }
+
+    public void deleteCurriculaById(Long id) {
+        try {
+            log.info("Deleting curricula with ID: {}", id);
+
+            if (!curriculaRepository.existsById(id)) {
+                throw new RuntimeException("Curricula not found with ID: " + id);
+            }
+
+            curriculaRepository.deleteById(id);
+            
+            log.info("Successfully deleted curricula with ID: {}", id);
+            
+            // Post transaction for curricula deletion
+            try {
+                Transaction transaction = new Transaction();
+                transaction.setActionDetails("Deleted curricula with ID: " + id);
+                transaction.setActionType("CURRICULA_DELETE");
+                transactionService.postTransaction(transaction, null);
+            } catch (Exception txnError) {
+                log.error("Failed to log deletion transaction", txnError);
+            }
+
+        } catch (RuntimeException e) {
+            log.error("Error deleting curricula: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Error deleting curricula", e);
+            throw new RuntimeException("Error deleting curricula: " + e.getMessage(), e);
+        }
+    }
+
+    public Map<String, Object> deleteMultipleCurricula(List<Long> ids) {
+        try {
+            log.info("Deleting {} curricula records", ids.size());
+
+            if (ids == null || ids.isEmpty()) {
+                throw new IllegalArgumentException("IDs list cannot be empty");
+            }
+
+            long successCount = 0;
+            long failureCount = 0;
+            List<String> failedIds = new ArrayList<>();
+
+            for (Long id : ids) {
+                try {
+                    if (curriculaRepository.existsById(id)) {
+                        curriculaRepository.deleteById(id);
+                        successCount++;
+                    } else {
+                        failureCount++;
+                        failedIds.add("ID " + id + " not found");
+                    }
+                } catch (Exception e) {
+                    failureCount++;
+                    failedIds.add("ID " + id + ": " + e.getMessage());
+                }
+            }
+
+            log.info("Deleted {} curricula records, {} failed", successCount, failureCount);
+
+            // Post transaction for multiple curricula deletion
+            try {
+                Transaction transaction = new Transaction();
+                transaction.setActionDetails("Deleted " + successCount + " curricula records out of " + ids.size());
+                transaction.setActionType("CURRICULA_BULK_DELETE");
+                transactionService.postTransaction(transaction, null);
+            } catch (Exception txnError) {
+                log.error("Failed to log bulk deletion transaction", txnError);
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("totalRequested", ids.size());
+            result.put("successCount", successCount);
+            result.put("failureCount", failureCount);
+            if (!failedIds.isEmpty()) {
+                result.put("failures", failedIds);
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("Error deleting multiple curricula", e);
+            throw new RuntimeException("Error deleting multiple curricula: " + e.getMessage(), e);
+        }
     }
 }

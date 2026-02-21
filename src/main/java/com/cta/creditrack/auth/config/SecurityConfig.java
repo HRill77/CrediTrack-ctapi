@@ -42,7 +42,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .authorizeHttpRequests(auth -> 
             auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
               .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/check-temp-password", "/api/auth/update-temp-password",
-              "/api/auth/forgot-password", "/api/ingest/curricula", "/api/student/**" ,"/api/files/**" ,"/api/ingest/**").permitAll()
+              "/api/auth/forgot-password", "/api/ingest/curricula", "/api/student/**" ,"/api/files/**" ,"/api/ingest/**", "/api/transcripts/**", "/api/document-ai/**" ).permitAll()
               .requestMatchers("/api/auth/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_USER", "ROLE_ADMIN", "ROLE_PROGRAM_HEAD")
               .anyRequest().authenticated()
         )
