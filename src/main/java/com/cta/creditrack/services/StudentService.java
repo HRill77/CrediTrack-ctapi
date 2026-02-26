@@ -41,113 +41,130 @@ public class StudentService {
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
 
     @Transactional
-public Long saveStudent(StudentDetailRequest sdr,
-                        MultipartFile torFile,
-                        MultipartFile cdFile) {
-    
-    Student student = null;
+    public Long saveStudent(StudentDetailRequest sdr,
+            MultipartFile torFile,
+            MultipartFile cdFile) {
 
-    try {
-        // ================= STUDENT SAVE =================
-        Optional<Student> existing =
-                studentRepository.findByEmail(sdr.email());
+        Student student = null;
 
-        student = existing.orElseGet(Student::new);
-        student.setFirstname(sdr.firstname());
-        student.setLastname(sdr.lastname());
-        student.setMiddlename(sdr.middlename());
-        student.setSuffix(sdr.suffix());
-        student.setEmail(sdr.email());
-        student.setYearLevel(sdr.yearLevel());
+        try {
+            // ================= STUDENT SAVE =================
+            Optional<Student> existing = studentRepository.findByEmail(sdr.email());
 
-        student = studentRepository.save(student);
+            student = existing.orElseGet(Student::new);
+            student.setFirstname(sdr.firstname());
+            student.setLastname(sdr.lastname());
+            student.setMiddlename(sdr.middlename());
+            student.setSuffix(sdr.suffix());
+            student.setEmail(sdr.email());
+            student.setYearLevel(sdr.yearLevel());
 
-       transactionService.logTransaction(
-                null,
-                transactionService.generateTransactionNumber(),
-                TransactionConstants.ACTION_SAVE.getValue(),
-                TransactionConstants.MODULE_STUDENT.getValue(),
-                "Student saved: " + student.getEmail(),
-                "SUCCESS"
-        );
+            student = studentRepository.save(student);
 
-        // ================= TRANSFER DETAILS =================
-        boolean hasTD =
-                transferDetailsRepository.existsByStudentId(student.getId());
-
-        if (!hasTD) {
-            TransferDetails td = new TransferDetails();
-            td.setFromUniversity(sdr.fromUniversity());
-            td.setFromCollege(sdr.fromCollege());
-            td.setFromProgram(sdr.fromProgram());
-            td.setToUniversity(sdr.toUniversity());
-            td.setToCollege(sdr.toCollege());
-            td.setToProgram(sdr.toProgram());
-            td.setStudent(student);
-
-            transferDetailsRepository.save(td);
-
-             transactionService.logTransaction(
+            transactionService.logTransaction(
                     null,
                     transactionService.generateTransactionNumber(),
                     TransactionConstants.ACTION_SAVE.getValue(),
-                    TransactionConstants.MODULE_TRANSFER.getValue(),
-                    "Transfer details saved for student ID " + student.getId(),
-                    "SUCCESS"
-            );
+                    TransactionConstants.MODULE_STUDENT.getValue(),
+                    "Student saved: " + student.getEmail(),
+                    "SUCCESS");
+
+            // ================= TRANSFER DETAILS =================
+            Optional<TransferDetails> existingTD = transferDetailsRepository.findByStudentId(student.getId());
+
+            TransferDetails td;
+
+            if (existingTD.isPresent()) {
+
+                td = existingTD.get();
+
+                td.setFromUniversity(sdr.fromUniversity());
+                td.setFromCollege(sdr.fromCollege());
+                td.setFromProgram(sdr.fromProgram());
+                td.setToUniversity(sdr.toUniversity());
+                td.setToCollege(sdr.toCollege());
+                td.setToProgram(sdr.toProgram());
+
+                transferDetailsRepository.save(td);
+
+                transactionService.logTransaction(
+                        null,
+                        transactionService.generateTransactionNumber(),
+                        TransactionConstants.ACTION_UPDATE.getValue(),
+                        TransactionConstants.MODULE_TRANSFER.getValue(),
+                        "Transfer details updated for student ID " + student.getId(),
+                        "SUCCESS");
+
+            } else {
+
+                td = new TransferDetails();
+                td.setFromUniversity(sdr.fromUniversity());
+                td.setFromCollege(sdr.fromCollege());
+                td.setFromProgram(sdr.fromProgram());
+                td.setToUniversity(sdr.toUniversity());
+                td.setToCollege(sdr.toCollege());
+                td.setToProgram(sdr.toProgram());
+                td.setStudent(student);
+
+                transferDetailsRepository.save(td);
+
+                transactionService.logTransaction(
+                        null,
+                        transactionService.generateTransactionNumber(),
+                        TransactionConstants.ACTION_SAVE.getValue(),
+                        TransactionConstants.MODULE_TRANSFER.getValue(),
+                        "Transfer details saved for student ID " + student.getId(),
+                        "SUCCESS");
+            }
+
+            // ================= FILE UPLOAD =================
+            FileUpload fileUpload = fileUploadRepository.findByStudentId(student.getId())
+                    .stream()
+                    .findFirst()
+                    .orElseGet(FileUpload::new);
+
+            fileUpload.setTorFilename(torFile.getOriginalFilename());
+            fileUpload.setTorFileType(torFile.getContentType());
+            fileUpload.setTorFileData(torFile.getBytes());
+            fileUpload.setTorFileSize(torFile.getSize());
+
+            if (cdFile != null && !cdFile.isEmpty()) {
+                fileUpload.setCdFilename(cdFile.getOriginalFilename());
+                fileUpload.setCdFileType(cdFile.getContentType());
+                fileUpload.setCdFileData(cdFile.getBytes());
+                fileUpload.setCdFileSize(cdFile.getSize());
+            }
+
+            fileUpload.setStudent(student);
+            fileUploadRepository.save(fileUpload);
+
+            transactionService.logTransaction(
+                    null,
+                    transactionService.generateTransactionNumber(),
+                    TransactionConstants.ACTION_UPLOAD.getValue(),
+                    TransactionConstants.MODULE_FILE_UPLOAD.getValue(),
+                    "Files uploaded for student ID " + student.getId(),
+                    "SUCCESS");
+
+        } catch (Exception e) {
+
+            // ===== FAILURE LOGS (best effort) =====
+            transactionService.logTransaction(
+                    null,
+                    transactionService.generateTransactionNumber(),
+                    "PROCESS",
+                    "STUDENT_ONBOARDING",
+                    "Failed student onboarding",
+                    e.getMessage());
+
+            log.error("Error saving student", e);
+
+            // force rollback of main transaction
+            throw new RuntimeException(e);
         }
 
-        // ================= FILE UPLOAD =================
-        FileUpload fileUpload =
-                fileUploadRepository.findByStudentId(student.getId())
-                        .stream()
-                        .findFirst()
-                        .orElseGet(FileUpload::new);
-
-        fileUpload.setTorFilename(torFile.getOriginalFilename());
-        fileUpload.setTorFileType(torFile.getContentType());
-        fileUpload.setTorFileData(torFile.getBytes());
-        fileUpload.setTorFileSize(torFile.getSize());
-
-        if (cdFile != null && !cdFile.isEmpty()) {
-            fileUpload.setCdFilename(cdFile.getOriginalFilename());
-            fileUpload.setCdFileType(cdFile.getContentType());
-            fileUpload.setCdFileData(cdFile.getBytes());
-            fileUpload.setCdFileSize(cdFile.getSize());
-        }
-
-        fileUpload.setStudent(student);
-        fileUploadRepository.save(fileUpload);
-
-        transactionService.logTransaction(
-                null,
-                transactionService.generateTransactionNumber(),
-                TransactionConstants.ACTION_UPLOAD.getValue(),
-                TransactionConstants.MODULE_FILE_UPLOAD.getValue(),
-                "Files uploaded for student ID " + student.getId(),
-                "SUCCESS"
-        );
-
-    } catch (Exception e) {
-
-        // ===== FAILURE LOGS (best effort) =====
-          transactionService.logTransaction(
-                null,
-                transactionService.generateTransactionNumber(),
-                "PROCESS",
-                "STUDENT_ONBOARDING",
-                "Failed student onboarding",
-                e.getMessage()
-        );
-
-        log.error("Error saving student", e);
-
-        // force rollback of main transaction
-        throw new RuntimeException(e);
+        return student.getId();
     }
-    
-    return student.getId();
-                        }
 
     public boolean emailExists(String email) {
         try {

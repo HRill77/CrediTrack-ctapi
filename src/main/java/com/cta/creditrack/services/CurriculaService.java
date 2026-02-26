@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.cta.creditrack.dtos.CurriculaCreateRequest;
+import com.cta.creditrack.dtos.CurriculaDTO;
 import com.cta.creditrack.dtos.CurriculaSearchRequest;
 import com.cta.creditrack.dtos.CurriculaSearchResult;
 import com.cta.creditrack.dtos.CurriculaUpdateRequest;
@@ -403,4 +404,137 @@ public class CurriculaService {
             throw new RuntimeException("Error deleting multiple curricula: " + e.getMessage(), e);
         }
     }
+
+    public List<CurriculaDTO> getCurriculaListByProgramCode(String programCode) {
+        try {
+            log.info("Fetching curricula list for program code: {}", programCode);
+
+            List<Curricula> curriculaList;
+
+            // If program code is empty, get all curricula
+            if (programCode == null || programCode.trim().isEmpty()) {
+                log.info("Program code is empty, fetching all curricula records");
+                curriculaList = curriculaRepository.findAll();
+            } else {
+                curriculaList = curriculaRepository.findByProgramCode(programCode);
+            }
+
+            log.info("Found {} curricula records", curriculaList.size());
+
+            // Convert to DTO
+            List<CurriculaDTO> dtoList = curriculaList.stream()
+                    .map(curricula -> new CurriculaDTO(
+                            curricula.getId(),
+                            curricula.getProgramTitle(),
+                            curricula.getProgramCode(),
+                            curricula.getYear(),
+                            curricula.getSemester(),
+                            curricula.getCourseCode(),
+                            curricula.getCourseTitle(),
+                            curricula.getPreRequisite(),
+                            curricula.getLec(),
+                            curricula.getLab(),
+                            curricula.getUnits()
+                    ))
+                    .collect(Collectors.toList());
+
+            // Post transaction
+            try {
+                Transaction transaction = new Transaction();
+                String actionDetails = (programCode == null || programCode.trim().isEmpty()) 
+                    ? "Fetched all curricula records. Found " + dtoList.size() + " records."
+                    : "Fetched curricula list for program code: " + programCode + ". Found " + dtoList.size() + " records.";
+                transaction.setActionDetails(actionDetails);
+                transaction.setActionType("CURRICULA_LIST_FETCH");
+                transactionService.postTransaction(transaction, null);
+            } catch (Exception txnError) {
+                log.error("Failed to log fetch transaction", txnError);
+            }
+
+            return dtoList;
+        } catch (Exception e) {
+            log.error("Error fetching curricula list", e);
+            throw new RuntimeException("Error fetching curricula list: " + e.getMessage(), e);
+        }
+    }
+
+    public List<CurriculaDTO> getAllCurricula() {
+        try {
+            log.info("Fetching all curricula records");
+
+            List<Curricula> curriculaList = curriculaRepository.findAll();
+
+            log.info("Found {} total curricula records", curriculaList.size());
+
+            // Convert to DTO
+            List<CurriculaDTO> dtoList = curriculaList.stream()
+                    .map(curricula -> new CurriculaDTO(
+                            curricula.getId(),
+                            curricula.getProgramTitle(),
+                            curricula.getProgramCode(),
+                            curricula.getYear(),
+                            curricula.getSemester(),
+                            curricula.getCourseCode(),
+                            curricula.getCourseTitle(),
+                            curricula.getPreRequisite(),
+                            curricula.getLec(),
+                            curricula.getLab(),
+                            curricula.getUnits()
+                    ))
+                    .collect(Collectors.toList());
+
+            // Post transaction
+            try {
+                Transaction transaction = new Transaction();
+                transaction.setActionDetails("Fetched all curricula records. Found " + dtoList.size() + " records.");
+                transaction.setActionType("CURRICULA_LIST_FETCH_ALL");
+                transactionService.postTransaction(transaction, null);
+            } catch (Exception txnError) {
+                log.error("Failed to log fetch all transaction", txnError);
+            }
+
+            return dtoList;
+        } catch (Exception e) {
+            log.error("Error fetching all curricula", e);
+            throw new RuntimeException("Error fetching all curricula: " + e.getMessage(), e);
+        }
+    }
+
+   public List<CurriculaDTO> getCurriculaListByCourseTitle(
+        String programTitle,
+        String courseTitle
+) {
+    try {
+        log.info("Fetching curricula list for programTitle: {}, courseTitle: {}",
+                programTitle, courseTitle);
+
+        List<Curricula> curriculaList =
+                curriculaRepository.findByProgramTitleAndCourseTitle(
+                        programTitle,
+                        courseTitle
+                );
+
+        List<CurriculaDTO> dtoList = curriculaList.stream()
+                .map(curricula -> new CurriculaDTO(
+                        curricula.getId(),
+                        curricula.getProgramTitle(),
+                        curricula.getProgramCode(),
+                        curricula.getYear(),
+                        curricula.getSemester(),
+                        curricula.getCourseCode(),
+                        curricula.getCourseTitle(),
+                        curricula.getPreRequisite(),
+                        curricula.getLec(),
+                        curricula.getLab(),
+                        curricula.getUnits()
+                ))
+                .collect(Collectors.toList());
+
+        return dtoList;
+
+    } catch (Exception e) {
+        log.error("Error fetching curricula list", e);
+        throw new RuntimeException("Error fetching curricula list", e);
+    }
+}
 }

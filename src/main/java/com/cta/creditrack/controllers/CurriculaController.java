@@ -1,6 +1,7 @@
 package com.cta.creditrack.controllers;
 
 import com.cta.creditrack.dtos.CurriculaCreateRequest;
+import com.cta.creditrack.dtos.CurriculaDTO;
 import com.cta.creditrack.dtos.CurriculaDeleteRequest;
 import com.cta.creditrack.dtos.CurriculaSearchRequest;
 import com.cta.creditrack.dtos.CurriculaSearchResult;
@@ -190,5 +191,81 @@ public class CurriculaController {
                     .body(createErrorResponse("An error occurred while deleting curricula: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/list/by-program")
+    public ResponseEntity<?> getCurriculaListByProgramCode(@RequestParam(required = false) String programCode) {
+        try {
+            log.info("Fetching curricula list for program code: {}", programCode);
+
+            List<CurriculaDTO> curriculaList = curriculaService.getCurriculaListByProgramCode(programCode);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", (programCode == null || programCode.trim().isEmpty()) 
+                ? "All curricula list retrieved successfully" 
+                : "Curricula list retrieved successfully for program code: " + programCode);
+            response.put("data", curriculaList);
+            response.put("count", curriculaList.size());
+            response.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            log.info("Successfully retrieved {} curricula records", curriculaList.size());
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error fetching curricula list", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("An error occurred while fetching curricula list: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/list/all")
+    public ResponseEntity<?> getAllCurriculaList() {
+        try {
+            log.info("Fetching all curricula records");
+
+            List<CurriculaDTO> curriculaList = curriculaService.getAllCurricula();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "All curricula list retrieved successfully");
+            response.put("data", curriculaList);
+            response.put("count", curriculaList.size());
+            response.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            log.info("Successfully retrieved {} curricula records", curriculaList.size());
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error fetching all curricula list", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("An error occurred while fetching curricula list: " + e.getMessage()));
+        }
+    }
+
+  @GetMapping("/list/by-program-and-course-title")
+public ResponseEntity<?> getCurriculaList(
+        @RequestParam(required = false) String programTitle,
+        @RequestParam(required = false) String courseTitle
+) {
+    try {
+        List<CurriculaDTO> curriculaList =
+                curriculaService.getCurriculaListByCourseTitle(
+                        programTitle,
+                        courseTitle
+                );
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("data", curriculaList);
+        response.put("count", curriculaList.size());
+        response.put("timestamp", LocalDateTime.now());
+
+        return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error fetching curricula list");
+    }
+}
     
 }
