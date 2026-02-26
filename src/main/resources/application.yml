@@ -89,6 +89,9 @@ logging:
 
 
 
+google:
+  vision:
+    api-key: "AIzaSyCi4l-9x5KhtKXr7839nC4rYg-RdrKzy8I"
 
 
   
