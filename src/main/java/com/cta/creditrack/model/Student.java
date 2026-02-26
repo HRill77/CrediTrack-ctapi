@@ -2,6 +2,8 @@ package com.cta.creditrack.model;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,6 +16,7 @@ import lombok.Setter;
 @Table(name = "cta_student")
 @Getter
 @Setter
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Student {
 
     @Id

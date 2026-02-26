@@ -2,6 +2,7 @@ package com.cta.creditrack.enums;
 
 public enum TransactionConstants {
     ACTION_SAVE("SAVE"),
+    ACTION_UPDATE("UPDATE"),
     ACTION_UPLOAD("UPLOAD"),
     MODULE_STUDENT("STUDENT"),
     MODULE_TRANSFER("TRANSFER_DETAILS"),
