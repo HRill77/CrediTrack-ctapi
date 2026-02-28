@@ -1,20 +1,30 @@
 package com.cta.creditrack.services;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.cta.creditrack.dtos.EmailRequest;
+import com.cta.creditrack.model.User;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
+	@Autowired
+	private PdfGeneratorService pdfGeneratorService;
+	@Autowired
+	private TranscriptEvaluationService transcriptEvaluationService;
 
     public void sendEmail(EmailRequest emailRequest) {
           try {
@@ -69,4 +79,91 @@ public class EmailService {
         sendEmail(request);
     }
     
+	 public void sendEvaluationEmail(
+            List<Long> studentIds,
+            String recipient,
+            User programHead) {
+
+        try {
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(message, true);
+
+            helper.setFrom(programHead.getEmail());
+            helper.setTo(recipient);
+            helper.setSubject("CrediTrack Evaluation Results");
+
+            helper.setText(buildEmailBody(studentIds, programHead), true);
+
+            // Attach multiple PDFs
+            for (Long studentId : studentIds) {
+                try {
+                    byte[] pdf =
+                            pdfGeneratorService.generateEvaluationPdf(studentId, programHead);
+
+                    // Get student data for filename
+                    var studentData = transcriptEvaluationService.getEvaluationByStudentId(studentId, programHead);
+                    String studentName = studentData.lastName() + ", " + studentData.firstName();
+                    String toProgram = studentData.toProgram() != null ? studentData.toProgram() : "Unknown";
+                    String filename = studentName + " - " + toProgram + ".pdf";
+
+                    helper.addAttachment(
+                            filename,
+                            new ByteArrayResource(pdf)
+                    );
+                } catch (Exception e) {
+                    log.error("Error generating PDF for student ID: {}", studentId, e);
+                    throw e;
+                }
+            }
+
+            mailSender.send(message);
+            log.info("Evaluation email sent successfully to: {}", recipient);
+
+        } catch (Exception e) {
+            log.error("Failed to send evaluation email to: {}", recipient, e);
+            throw new RuntimeException("Failed to send email: " + e.getMessage(), e);
+        }
+    }
+
+    private String buildEmailBody(List<Long> studentIds, User programHead) {
+
+        StringBuilder studentList = new StringBuilder();
+        int counter = 1;
+
+        for (Long id : studentIds) {
+            try {
+                var student = transcriptEvaluationService.getEvaluationByStudentId(id, programHead);
+                if (student != null) {
+                    studentList.append(counter++)
+                        .append(". ")
+                        .append(student.firstName())
+                        .append(" ")
+                        .append(student.lastName())
+                        .append(" - ")
+                        .append(student.fromUniversity() != null ? student.fromUniversity() : "Unknown University")
+                        .append("<br>");
+                }
+            } catch (Exception e) {
+                studentList.append(counter++)
+                    .append(". Student ID: ")
+                    .append(id)
+                    .append("<br>");
+            }
+        }
+
+        return """
+            <div style="font-family:Arial;padding:20px">
+                <p>Greetings!</p>
+                <p>The CrediTrack results for the following students is attached to this email:</p>
+                %s
+                <br>
+                <p>Please feel free to download and review the file at your convenience.</p>
+                <p>Please be advised that this is only an initial review. A manual verification process is still required to ensure the accuracy and completeness of the result.</p>
+                <br>
+                <p>Best regards,<br><strong>CrediTrack</strong></p>
+            </div>
+            """.formatted(studentList.toString());
+    }
 }
