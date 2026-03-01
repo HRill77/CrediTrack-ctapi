@@ -67,6 +67,25 @@ public class EmailWhitelistingController {
         return ResponseEntity.ok(results);
     }
 
+    @GetMapping("/list")
+    public ResponseEntity<?> getAllActiveWhitelisting() {
+        try {
+            List<EmailWhitelisting> whitelistings = emailWhitelistingRepository.findByStatusTrue();
+            List<Map<String, Object>> result = whitelistings.stream()
+                    .map(w -> {
+                        Map<String, Object> map = new java.util.HashMap<>();
+                        map.put("id", w.getId());
+                        map.put("email", w.getEmail());
+                        return map;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve whitelisting list: " + e.getMessage());
+        }
+    }
+
     @PutMapping("/status/{id}")
     public ResponseEntity<?> updateWhitelistingStatus(
             @PathVariable Long id) {

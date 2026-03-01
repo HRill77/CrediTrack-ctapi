@@ -37,7 +37,11 @@ public class TranscriptService {
                 continue;
             }
 
-            File temp = File.createTempFile("transcript", ".jpg");
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename != null && originalFilename.contains(".") 
+                ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
+                : ".jpg";
+            File temp = File.createTempFile("transcript", extension);
             file.transferTo(temp);
 
             try {
