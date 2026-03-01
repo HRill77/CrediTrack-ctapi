@@ -48,11 +48,15 @@ public interface TranscriptEvaluationRepository extends JpaRepository<Transcript
                 s.firstname,
                 s.middlename,
                 s.lastname,
+                s.suffix,
+                s.year_level,
+                s.email,
 
                 td.from_university,
                 td.from_program,
                 td.to_university,
                 td.to_program,
+                td.to_college,
 
                 fu.id,
                 fu.tor_filename,
