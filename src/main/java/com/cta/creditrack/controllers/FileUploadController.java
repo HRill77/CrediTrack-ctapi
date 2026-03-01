@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.cta.creditrack.dtos.FileUploadDTO;
+import com.cta.creditrack.dtos.FileUploadDTO2;
 import com.cta.creditrack.model.FileUpload;
 import com.cta.creditrack.services.FileUploadService;
 
@@ -18,6 +20,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -30,8 +33,9 @@ public class FileUploadController {
 
     /**
      * Upload a file (PDF or JPEG)
-     * @param file The file to upload (multipart)
-     * @param studentId The student ID associated with the file
+     * 
+     * @param file        The file to upload (multipart)
+     * @param studentId   The student ID associated with the file
      * @param description Optional description for the file
      * @return ResponseEntity with file details
      */
@@ -51,9 +55,12 @@ public class FileUploadController {
             response.put("success", true);
             response.put("message", "File uploaded successfully");
             response.put("fileId", uploadedFile.getId());
-            response.put("filename", uploadedFile.getTorFilename() != null ? uploadedFile.getTorFilename() : uploadedFile.getCdFilename());
-            response.put("fileType", uploadedFile.getTorFileType() != null ? uploadedFile.getTorFileType() : uploadedFile.getCdFileType());
-            response.put("fileSize", uploadedFile.getTorFileSize() != null ? uploadedFile.getTorFileSize() : uploadedFile.getCdFileSize());
+            response.put("filename", uploadedFile.getTorFilename() != null ? uploadedFile.getTorFilename()
+                    : uploadedFile.getCdFilename());
+            response.put("fileType", uploadedFile.getTorFileType() != null ? uploadedFile.getTorFileType()
+                    : uploadedFile.getCdFileType());
+            response.put("fileSize", uploadedFile.getTorFileSize() != null ? uploadedFile.getTorFileSize()
+                    : uploadedFile.getCdFileSize());
             response.put("uploadDate", uploadedFile.getUploadDate());
 
             return ResponseEntity.ok(response);
@@ -83,52 +90,56 @@ public class FileUploadController {
 
     /**
      * Get file by ID
+     * 
      * @param fileId The ID of the file
      * @return ResponseEntity with file data
      */
     // @GetMapping("/{fileId}")
     // public ResponseEntity<?> getFile(@PathVariable Long fileId) {
-    //     try {
-    //         FileUpload fileUpload = fileUploadService.getFileById(fileId);
+    // try {
+    // FileUpload fileUpload = fileUploadService.getFileById(fileId);
 
-    //         if (fileUpload == null) {
-    //             Map<String, Object> response = new HashMap<>();
-    //             response.put("success", false);
-    //             response.put("message", "File not found");
-    //             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-    //         }
-
-    //         log.info("Downloading file: {}", fileUpload.getFilename());
-
-    //         return ResponseEntity.ok()
-    //                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileUpload.getFilename() + "\"")
-    //                 .contentType(MediaType.parseMediaType(fileUpload.getFileType()))
-    //                 .body(fileUpload.getFileData());
-
-    //     } catch (Exception e) {
-    //         log.error("Error retrieving file: {}", e.getMessage());
-    //         Map<String, Object> response = new HashMap<>();
-    //         response.put("success", false);
-    //         response.put("message", "Error retrieving file");
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    //     }
+    // if (fileUpload == null) {
+    // Map<String, Object> response = new HashMap<>();
+    // response.put("success", false);
+    // response.put("message", "File not found");
+    // return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     // }
 
-    /**
-     * Get all files for a student
-     * @param studentId The student ID
-     * @return ResponseEntity with list of files
-     */
+    // log.info("Downloading file: {}", fileUpload.getFilename());
+
+    // return ResponseEntity.ok()
+    // .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" +
+    // fileUpload.getFilename() + "\"")
+    // .contentType(MediaType.parseMediaType(fileUpload.getFileType()))
+    // .body(fileUpload.getFileData());
+
+    // } catch (Exception e) {
+    // log.error("Error retrieving file: {}", e.getMessage());
+    // Map<String, Object> response = new HashMap<>();
+    // response.put("success", false);
+    // response.put("message", "Error retrieving file");
+    // return
+    // ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    // }
+    // }
+
     @GetMapping("/student/{studentId}")
     public ResponseEntity<?> getFilesByStudentId(@PathVariable Long studentId) {
         try {
             List<FileUpload> files = fileUploadService.getFilesByStudentId(studentId);
+            List<FileUploadDTO2> dtoList = files.stream()
+                    .map(f -> new FileUploadDTO2(
+                            f.getId(), f.getTorFilename(), f.getTorFileType(), f.getTorFileSize(), f.getTorFileData(),
+                            f.getCdFilename(), f.getCdFileType(), f.getCdFileSize(), f.getCdFileData(),
+                            f.getUploadDate(), f.getStudent().getId()))
+                    .collect(Collectors.toList());
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("studentId", studentId);
             response.put("fileCount", files.size());
-            response.put("files", files);
+            response.put("files", dtoList);
 
             return ResponseEntity.ok(response);
 
@@ -143,6 +154,7 @@ public class FileUploadController {
 
     /**
      * Delete a file
+     * 
      * @param fileId The ID of the file to delete
      * @return ResponseEntity with success status
      */
@@ -173,6 +185,7 @@ public class FileUploadController {
 
     /**
      * Health check endpoint
+     * 
      * @return ResponseEntity with status
      */
     @GetMapping("/health")

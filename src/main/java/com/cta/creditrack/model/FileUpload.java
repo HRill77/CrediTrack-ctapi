@@ -39,16 +39,16 @@ public class FileUpload {
     @Column(name = "tor_file_size")
     private Long torFileSize;
 
-        @Column(name = "cd_filename", nullable = false)
+        @Column(name = "cd_filename", nullable = true)
     private String cdFilename;
 
-    @Column(name = "cd_file_type", nullable = false)
+    @Column(name = "cd_file_type", nullable = true)
     private String cdFileType;
     @Lob
-    @Column(name = "cd_file_data", nullable = false, columnDefinition = "LONGBLOB")
+    @Column(name = "cd_file_data", nullable = true, columnDefinition = "LONGBLOB")
     private byte[] cdFileData;
     
-    @Column(name = "cd_file_size")
+    @Column(name = "cd_file_size", nullable = true)
     private Long cdFileSize;
     
     @ManyToOne(fetch = FetchType.LAZY)
