@@ -26,4 +26,6 @@ public interface EmailWhitelistingRepository extends JpaRepository<EmailWhitelis
         @Param("searchTerm") String searchTerm);
     
     Optional<EmailWhitelisting> findByEmail(String email);
+
+    List<EmailWhitelisting> findByStatusTrue();
 }

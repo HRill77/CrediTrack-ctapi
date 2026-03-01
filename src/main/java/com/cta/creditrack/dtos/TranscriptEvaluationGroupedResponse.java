@@ -7,12 +7,16 @@ public record TranscriptEvaluationGroupedResponse(
         String firstName,
         String middleName,
         String lastName,
+        String suffix,
+        String yearLevel,
+        String email,
         String fromUniversity,
         String fromProgram,
         String toUniversity,
         String toProgram,
         FileUploadDTO fileUpload, 
-        List<EvaluationItem> evaluation
+        List<EvaluationItem> evaluation,
+        ApprovalsDTO approvals
 ) {
 
 }
