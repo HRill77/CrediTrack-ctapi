@@ -45,8 +45,7 @@ public class SecurityConfig {
                                 "/api/**")
                         .permitAll()
                         .requestMatchers("/api/auth/**")
-                        .hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_USER", "ROLE_ADMIN", "ROLE_PROGRAM_HEAD",
-                                "ROLE_HIDDEN")
+                        .hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_PROGRAM_HEAD")
                         .anyRequest().authenticated())
                 .authenticationProvider(daoAuthProvider())
                 .exceptionHandling(ex -> ex
