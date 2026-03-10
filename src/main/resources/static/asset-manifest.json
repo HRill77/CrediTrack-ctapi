@@ -1,0 +1,39 @@
+{
+  "files": {
+    "main.css": "/static/css/main.58176e64.css",
+    "main.js": "/static/js/main.23850268.js",
+    "static/js/239.41f9d879.chunk.js": "/static/js/239.41f9d879.chunk.js",
+    "static/js/977.7b9ae97d.chunk.js": "/static/js/977.7b9ae97d.chunk.js",
+    "static/js/455.a52d638b.chunk.js": "/static/js/455.a52d638b.chunk.js",
+    "static/js/682.e8e5987a.chunk.js": "/static/js/682.e8e5987a.chunk.js",
+    "static/js/453.50594a34.chunk.js": "/static/js/453.50594a34.chunk.js",
+    "static/media/wupLogo.png": "/static/media/wupLogo.96c4a23921e88418b656.png",
+    "static/media/WUP.png": "/static/media/WUP.c41155285851b9cfee08.png",
+    "static/media/accountancy.png": "/static/media/accountancy.cef9cda681b66d2e3675.png",
+    "static/media/hospitality.png": "/static/media/hospitality.7a59922423be74443271.png",
+    "static/media/prograbg.png": "/static/media/prograbg.d5f4d0138118cc87d23b.png",
+    "static/media/crediTrackLogo2.png": "/static/media/crediTrackLogo2.47b4252cee61795822de.png",
+    "static/media/engineering.png": "/static/media/engineering.9b01f61507b426bff0ed.png",
+    "static/media/Hannah.jpg": "/static/media/Hannah.35e2bbea24950f2500f4.jpg",
+    "static/media/Mary.jpg": "/static/media/Mary.55378622dda54d26d566.jpg",
+    "static/media/Joyce.jpg": "/static/media/Joyce.a00e67c5245181501879.jpg",
+    "static/media/Harries.jpg": "/static/media/Harries.1b6b10d18f87233861c2.jpg",
+    "static/media/Jelyn.jpg": "/static/media/Jelyn.ef04bfb9a1cfb1effd27.jpg",
+    "static/media/AITranscriptTools.png": "/static/media/AITranscriptTools.1a2c3125cab2348bc597.png",
+    "static/media/Uploadfile.png": "/static/media/Uploadfile.ec1e2e2b86be00a5a8a8.png",
+    "static/media/creditMatching.png": "/static/media/creditMatching.ec1e2e2b86be00a5a8a8.png",
+    "static/media/verified.png": "/static/media/verified.07ec645e4881f02cc054.png",
+    "index.html": "/index.html",
+    "main.58176e64.css.map": "/static/css/main.58176e64.css.map",
+    "main.23850268.js.map": "/static/js/main.23850268.js.map",
+    "239.41f9d879.chunk.js.map": "/static/js/239.41f9d879.chunk.js.map",
+    "977.7b9ae97d.chunk.js.map": "/static/js/977.7b9ae97d.chunk.js.map",
+    "455.a52d638b.chunk.js.map": "/static/js/455.a52d638b.chunk.js.map",
+    "682.e8e5987a.chunk.js.map": "/static/js/682.e8e5987a.chunk.js.map",
+    "453.50594a34.chunk.js.map": "/static/js/453.50594a34.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.58176e64.css",
+    "static/js/main.23850268.js"
+  ]
+}

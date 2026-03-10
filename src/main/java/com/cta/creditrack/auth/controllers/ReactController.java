@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @Controller
 public class ReactController implements ErrorController {
 
-    @Value("${gateway.url:http://localhost:3000}")
+    @Value("${gateway.url:http://localhost:8080}")
     private String gatewayUrl;
 
     private static final Logger log = LoggerFactory.getLogger(ReactController.class);
