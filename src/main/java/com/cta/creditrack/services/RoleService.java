@@ -27,10 +27,7 @@ public class RoleService {
     private List<Role> getPredefinedRoles() {
         // Implementation for getting predefined roles
         return Arrays.asList(new Role(null, "ROLE_PROGRAM_HEAD"),
-                new Role(null, "ROLE_SUPER_ADMIN"),
-                new Role(null, "ROLE_ADMIN"),
-                new Role(null, "ROLE_USER"),
-                new Role(null, "ROLE_HIDDEN"));
+                new Role(null, "ROLE_SUPER_ADMIN"));
     }
 
     public List<Role> getAllRoles() {
