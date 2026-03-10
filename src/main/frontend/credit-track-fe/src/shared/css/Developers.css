@@ -1,0 +1,27 @@
+.developers {
+    padding: 50px 0px 100px 0px;
+    display: flex;
+    flex-direction: column;
+    background-color: #F5F5F5;
+}
+
+.developers-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+}
+
+.developers-top-text {
+    text-align: center;
+    max-width: 60rem;
+    margin: 0 auto; /* Add this line to center the container */
+}
+
+.developers-top-text p {
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    color: #333;
+    line-height: 1.6;
+}

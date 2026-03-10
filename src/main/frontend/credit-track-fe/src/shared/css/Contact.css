@@ -1,0 +1,28 @@
+.contact-footer {
+  background-color: #064F1E;
+  padding: 4rem 5rem;
+  color: white;
+}
+
+.contact-footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.contact-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  max-width: 600px;
+}
+
+.contact-footer-right {
+  text-align: center;
+}
+
+.contact-footer-right img {
+  display: block;
+  margin: 0 auto;
+}
