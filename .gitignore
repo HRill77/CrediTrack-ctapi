@@ -5,7 +5,7 @@ target/
 !**/src/test/**/target/
 
 ### frontend folder
-**/src/main/frontend
+# **/src/main/frontend
 ### STS ###
 .apt_generated
 .classpath
