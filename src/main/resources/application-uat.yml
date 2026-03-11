@@ -48,7 +48,15 @@ gateway:
   url: ${GATEWAY_URL:http://localhost:8080}
 
 management:
+  endpoint:
+    health:
+      show-details: always
+
   endpoints:
     web:
       exposure:
         include: health
+
+  health:
+    db:
+      enabled: false
