@@ -45,7 +45,7 @@ logging:
     org.hibernate.SQL: OFF
 
 gateway:
-  url: ${GATEWAY_URL:http://localhost:8080}
+  url: https://creditrack.onrender.com
 
 management:
   endpoint:
