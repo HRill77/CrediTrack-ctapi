@@ -21,24 +21,43 @@ const CustomSnackbar: React.FC<CustomSnackbarProps> = ({
   };
 
   return (
-    <Snackbar
-      open={open}
-      autoHideDuration={4000}
-      onClose={handleClose}
-      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      sx={{
-        zIndex: (theme) => theme.zIndex.modal + 1,
-      }}
-    >
+      <Snackbar
+            anchorOrigin={{
+              vertical: "bottom" as const,
+              horizontal: "right" as const,
+            }}
+            open={open}
+            autoHideDuration={3000}
+            onClose={handleClose}
+            message={message}
+          >
+            <Alert
+              onClose={handleClose}
+              severity={severity}
+              variant="filled"
+              sx={{ width: "100%" }}
+            >
+              {message}
+            </Alert>
+          </Snackbar>
+    // <Snackbar
+    //   open={open}
+    //   autoHideDuration={4000}
+    //   onClose={handleClose}
+    //   anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+    //   sx={{
+    //     zIndex: (theme) => theme.zIndex.modal + 1,
+    //   }}
+    // >
     
-      <Alert
-        onClose={onClose}
-        severity={severity}
-        sx={{ width: '100%' }}
-      >
-        {message}
-      </Alert>
-    </Snackbar>
+    //   <Alert
+    //     onClose={onClose}
+    //     severity={severity}
+    //     sx={{ width: '100%' }}
+    //   >
+    //     {message}
+    //   </Alert>
+    // </Snackbar>
   );
 };
 

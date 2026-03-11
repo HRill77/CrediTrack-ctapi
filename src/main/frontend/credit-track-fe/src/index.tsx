@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
+import "viewerjs/dist/viewer.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -19,16 +20,16 @@ const root = ReactDOM.createRoot(
 root.render(
   // <React.StrictMode>
   <BrowserRouter>
-    <AuthProvider>
-      <SnackbarProvider>
-        <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <SnackbarProvider>
           <ThemeProvider theme={theme}>
             <App />
           </ThemeProvider>
           <ReactQueryDevtools />
-        </QueryClientProvider>
-      </SnackbarProvider>
-    </AuthProvider>
+        </SnackbarProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   </BrowserRouter>
   // </React.StrictMode>,
 );

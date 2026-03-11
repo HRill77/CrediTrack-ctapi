@@ -54,9 +54,9 @@ const UpdatePassword: React.FC = () => {
 
   const handleChange =
     (field: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setForm({ ...form, [field]: e.target.value });
-    };
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm({ ...form, [field]: e.target.value });
+      };
 
   const validate = () => {
     if (!form.tempPassword || !form.newPassword || !form.confirmPassword) {
@@ -74,23 +74,23 @@ const UpdatePassword: React.FC = () => {
       return false;
     }
 
-    if(!/[A-Z]/.test(form.newPassword)){
+    if (!/[A-Z]/.test(form.newPassword)) {
       setError("Password must contain at least one uppercase letter.");
       return false;
     }
-    if(!/[a-z]/.test(form.newPassword)){
+    if (!/[a-z]/.test(form.newPassword)) {
       setError("Password must contain at least one lowercase letter.");
       return false;
     }
-    if(!/[0-9]/.test(form.newPassword)){
+    if (!/[0-9]/.test(form.newPassword)) {
       setError("Password must contain at least one number.");
       return false;
     }
 
     if (!/[!@#$%^&*(),.?\"':{}|<>~`]/.test(form.newPassword)) {
-  setError("Password must contain at least one special character.");
-  return false;
-}
+      setError("Password must contain at least one special character.");
+      return false;
+    }
 
 
     return true;
@@ -108,20 +108,20 @@ const UpdatePassword: React.FC = () => {
         currentPassword: form.tempPassword,
         newPassword: form.newPassword,
       });
-setSuccessMessage("Password updated successfully!");
-      
+      setSuccessMessage("Password updated successfully!");
+
       // Navigate after showing success message
-            setTimeout(() => {
+      setTimeout(() => {
         navigate("/", { replace: true });
       }, 2000);
-  
+
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || "Unable to update password. Please try again.";
       setError(errorMsg);
       showError(errorMsg);
     } finally {
       setLoading(false);
-    
+
     }
   };
 
@@ -131,17 +131,17 @@ setSuccessMessage("Password updated successfully!");
     >
       <Card sx={{ maxWidth: 420, width: "100%", p: 1 }}>
         <GhostButton
-  variant="text"
-  size="large"
-  sx={{ fontWeight: 600 }}
-  disabled={loading}
-  startIcon={<ArrowBackIcon />}
-  onClick={() => navigate("/", { replace: true })}
->
-  Back to Home
-</GhostButton>
+          variant="text"
+          size="large"
+          sx={{ fontWeight: 600 }}
+          disabled={loading}
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate("/", { replace: true })}
+        >
+          Back to Home
+        </GhostButton>
         <CardContent>
-            
+
           <Typography variant="h6" fontWeight={700} textAlign="center">
             Update Your Password
           </Typography>
@@ -157,41 +157,41 @@ setSuccessMessage("Password updated successfully!");
           </Typography>
 
           {error && (
-            <Alert severity="warning"   sx={{
-                fontSize: "0.75rem",
-                py: 0.5,
-                px: 1,
-                minHeight: "auto",
-                alignItems: "center",
-                "& .MuiAlert-icon": {
-                  fontSize: "1rem",
-                  mr: 0.5,
-                },
-                "& .MuiAlert-message": {
-                  padding: 0,
-                },
-              }}>
+            <Alert severity="warning" sx={{
+              fontSize: "0.75rem",
+              py: 0.5,
+              px: 1,
+              minHeight: "auto",
+              alignItems: "center",
+              "& .MuiAlert-icon": {
+                fontSize: "1rem",
+                mr: 0.5,
+              },
+              "& .MuiAlert-message": {
+                padding: 0,
+              },
+            }}>
               {error}
             </Alert>
           )}
 
           {successMessage &&
-           <Alert severity="success"   sx={{
-                fontSize: "0.75rem",
-                py: 0.5,
-                px: 1,
-                minHeight: "auto",
-                alignItems: "center",
-                "& .MuiAlert-icon": {
-                  fontSize: "1rem",
-                  mr: 0.5,
-                },
-                "& .MuiAlert-message": {
-                  padding: 0,
-                },
-              }}>
+            <Alert severity="success" sx={{
+              fontSize: "0.75rem",
+              py: 0.5,
+              px: 1,
+              minHeight: "auto",
+              alignItems: "center",
+              "& .MuiAlert-icon": {
+                fontSize: "1rem",
+                mr: 0.5,
+              },
+              "& .MuiAlert-message": {
+                padding: 0,
+              },
+            }}>
               {successMessage}
-            </Alert> }
+            </Alert>}
 
           {/* Temporary Password */}
           <FormControl fullWidth margin="normal">
@@ -265,7 +265,7 @@ setSuccessMessage("Password updated successfully!");
           >
             {loading ? "Updating..." : "Update Password"}
           </MainButton>
-          
+
         </CardContent>
       </Card>
 

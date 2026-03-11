@@ -4,6 +4,7 @@ import { CurriculaInterface } from '../../shared/interface/CurriculaInterface';
 
 interface ColumnProps {
     curricula?: CurriculaInterface;
+    actionTemplate: (row: CurriculaInterface) => React.ReactNode;
 }
 
 const CurriculaTableCol = (props: ColumnProps): GridColDef[] => {
@@ -72,7 +73,7 @@ const CurriculaTableCol = (props: ColumnProps): GridColDef[] => {
             filterable: false,
             renderCell: ({ row }: { row: CurriculaInterface }) => {
                 return (
-                    <span>{row.preRequisite === "None"? "-" : row.preRequisite}</span>
+                    <span>{row.preRequisite === "None" ? "-" : row.preRequisite}</span>
                 );
             },
             flex: 1,
@@ -105,6 +106,19 @@ const CurriculaTableCol = (props: ColumnProps): GridColDef[] => {
             headerAlign: 'center',
             flex: 1,
         },
+        {
+            field: 'action',
+            headerName: 'Action',
+            minWidth: 80,
+            align: 'center',
+            headerAlign: 'center',
+            filterable: false,
+            hideable: false,
+            pinnable: false,
+            sortable: false,
+            disableColumnMenu: true,
+            renderCell: ({ row }: { row: CurriculaInterface }) => props.actionTemplate(row),
+        }
     ]
 }
 

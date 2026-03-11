@@ -6,10 +6,10 @@ export interface StudentFormData {
   lastname: string;
   suffix: string;
   email: string;
-  phone: string;
-  address: string;
+  // phone: string;
+  // address: string;
   yearLevel: string;
-  dob: dayjs.Dayjs | null;
+  // dob: dayjs.Dayjs | null;
 }
 
 
@@ -21,8 +21,14 @@ export interface StudentFormDataRequest {
   lastname: string;
   suffix: string;
   email: string;
-  phone: string;
-  address: string;
+  // phone: string;
+  // address: string;
   yearLevel: string;
-  dob: String| null;
+  // dob: String| null;
+   fromUniversity: string;
+  fromCollege: string;
+  fromProgram: string;
+  toUniversity: string;
+  toCollege: string;
+  toProgram: string;
 }

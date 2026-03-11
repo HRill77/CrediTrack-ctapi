@@ -1,5 +1,5 @@
 export interface CurriculaInterface {
-  id: string;
+  id: number;
   programTitle: string;
   programCode: string;
   year: string;

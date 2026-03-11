@@ -14,7 +14,11 @@ const Programs = () => {
                 variant="h4"
                 align="center"
                 gutterBottom
-                sx={{ fontWeight: "bold", color: "#064F1E " }}
+                sx={{
+                  fontWeight: "bold",
+                  color: "#064F1E",
+                  fontSize: "clamp(1.25rem, 4vw, 2.125rem)",
+                }}
               >
                 Programs and Courses
               </Typography>
