@@ -110,6 +110,11 @@
     <type>pom</type>
 </dependency>
 
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+
 	<!-- Source: https://mvnrepository.com/artifact/net.sourceforge.tess4j/tess4j -->
 	<!-- OCR -->
 <!-- <dependency>
