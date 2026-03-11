@@ -1,32 +1,47 @@
 import React, { createContext, useEffect, useState } from "react";
 import AuthService from "../services/AuthService";
 import { useNavigate } from "react-router-dom";
-type AuthContextType = {
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+ type AuthContextType = {
   currentUser: any;
   setCurrentUser: React.Dispatch<React.SetStateAction<any>>;
   logout: () => Promise<void>;
-  getCurrentUser: () => void;
+  getCurrentUser: () => Promise<void>;
   isAuthLoading: boolean;
 };
 
-
+const USER_QUERY_KEY = ["user"];
 
 export const AuthContext = createContext<AuthContextType>({
   currentUser: undefined,
   setCurrentUser: () => {},
   logout: async () => {},
-  getCurrentUser: () => {},
+  getCurrentUser: async () => {},
   isAuthLoading: true,
 });
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<any>();
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Use React Query to fetch user data
+  const { data: userData, refetch } = useQuery({
+    queryKey: USER_QUERY_KEY,
+    queryFn: async () => {
+      const response = await AuthService.getUserInfo();
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    enabled: false, // Manual control
+  });
 
   const getCurrentUser = async () => {
     try {
-      const response = await AuthService.getUserInfo();
-      setCurrentUser(response.data);
+      const { data } = await refetch();
+      setCurrentUser(data);
     } catch {
       setCurrentUser(undefined);
     } finally {
@@ -37,6 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     await AuthService.logout();
     setCurrentUser(undefined);
+    queryClient.removeQueries({ queryKey: USER_QUERY_KEY });
     sessionStorage.removeItem('isGuest');
     navigate('/');
   };
@@ -50,6 +66,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getCurrentUser();
     }
   }, []);
+
+  // // Update currentUser when userData changes
+  // useEffect(() => {
+  //   if (userData) {
+  //     setCurrentUser(userData);
+  //   }
+  // }, [userData]);
 
   return (
     <AuthContext.Provider

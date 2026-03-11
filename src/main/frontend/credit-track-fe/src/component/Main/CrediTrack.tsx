@@ -37,6 +37,7 @@ import AuthService from "../../shared/services/AuthService";
 import { AuthContext } from "../../shared/context/AuthContext";
 import { SnackbarContext } from "../../shared/context/SnackbarContext";
 import { useNavigate } from "react-router-dom";
+
 const CrediTrack = () => {
   const { getCurrentUser } = useContext(AuthContext);
   const { openSnack, closeSnack, showSuccess } = useContext(SnackbarContext);
@@ -53,10 +54,6 @@ const CrediTrack = () => {
     email: "",
     password: "",
   });
-  // const [openSnack, setOpenSnack] = useState({
-  //     isSuccess: false,
-  //     message:''
-  // });
   const [errorMessage, setErrorMessage] = useState({
     emailError: "",
     passwordError: "",
@@ -64,26 +61,10 @@ const CrediTrack = () => {
   const [loginError, setLoginError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // const handleCloseSnack = () => {
-  //   setOpenSnack({ isSuccess: false, message: "" });
-  // };
-
-  const handleLoginErrorClose = () => {
-    setLoginError("");
-  };
-
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
-
-  const handleAdminClickOpen = () => {
-    setAdminOpen(true);
-  };
-
+  const handleLoginErrorClose = () => setLoginError("");
+  const handleClickOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+  const handleAdminClickOpen = () => setAdminOpen(true);
   const handleAdminClose = () => {
     setAdminOpen(false);
     setLogin({ email: "", password: "" });
@@ -93,84 +74,45 @@ const CrediTrack = () => {
   };
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
-
-  const handleMouseDownPassword = (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    event.preventDefault();
-  };
-
-  const handleMouseUpPassword = (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    event.preventDefault();
-  };
+  const handleMouseDownPassword = (e: React.MouseEvent<HTMLButtonElement>) =>
+    e.preventDefault();
+  const handleMouseUpPassword = (e: React.MouseEvent<HTMLButtonElement>) =>
+    e.preventDefault();
 
   const validateLogin = (loginValue: LoginInterface) => {
     const email = loginValue.email.trim().toLowerCase();
     const password = loginValue.password;
-
     let emailError = "";
     let passwordError = "";
-
-    //Email validation
-    if (!email) {
-      emailError = "Email is required";
-    }
-    //  else if (!email.endsWith("@wesleyan.edu.ph")) {
-    //   emailError =
-    //     "Please enter a valid institutional email (@wesleyan.edu.ph)";
-    // }
-
-    // Password validation
-    if (!password) {
-      passwordError = "Password is required";
-    }
-
-    // Update error state ONCE (walang race condition)
-    setErrorMessage({
-      emailError,
-      passwordError,
-    });
-
+    if (!email) emailError = "Email is required";
+    if (!password) passwordError = "Password is required";
+    setErrorMessage({ emailError, passwordError });
     return !emailError && !passwordError;
   };
 
   const handleLoginSubmit = async (loginValue: LoginInterface) => {
     const email = loginValue.email.trim().toLowerCase();
     const password = loginValue.password;
-
     if (!email || !password) {
       validateLogin(loginValue);
       return;
     }
-
     setIsLoading(true);
     setLoginError("");
-
     try {
-      // 1. Check temporary password
-      console.log("Checking temporary password for:", email);
       const tempRes = await AuthService.checkTempPassword(email, password);
       if (tempRes.data.isTempPassword) {
         navigate("/update-password", { state: { email } });
         return;
       }
-
-      // 2. Perform login
       await AuthService.login(email, password);
-
-      // 3. Fetch current user AFTER successful login
       await getCurrentUser();
-
-      // 4. UI success handling
       showSuccess("Login successful!");
       handleAdminClose();
-      // navigate('/dashboard');
     } catch (error: any) {
       if (error.response?.status === 401 || error.response?.status === 403) {
         setLoginError(
-          "Oops! Incorrect username or password. Please try again."
+          "Oops! Incorrect username or password. Please try again.",
         );
       } else if (error.response?.status === 429) {
         setLoginError(error.response.data.message);
@@ -182,16 +124,7 @@ const CrediTrack = () => {
     }
   };
 
-  const handleForgotPassword = () => {
-    // Navigate to forgot password page or open forgot password dialog
-    navigate("/forgot-password");
-  };
-
-  // const handleLoginChange = (loginValue: LoginInterface) => {
-  //     setLogin(loginValue);
-  //     validateLogin(loginValue);
-  // };
-
+  const handleForgotPassword = () => navigate("/forgot-password");
   const handleSignInAsGuest = () => {
     sessionStorage.setItem("isGuest", "true");
     navigate("/dashboard");
@@ -223,22 +156,30 @@ const CrediTrack = () => {
         <Contact />
       </div>
 
+      {/* ACCESS CREDITRACK DIALOG */}
       <Dialog
         open={open}
-        slots={{
-          transition: SlideDownTransition,
-        }}
+        slots={{ transition: SlideDownTransition }}
         onClose={handleClose}
         maxWidth="xs"
         fullWidth
         keepMounted
       >
         <DialogTitle sx={{ textAlign: "center", pb: 1 }}>
-          <Typography variant="inherit" fontWeight={700}>
+          <Typography
+            variant="inherit"
+            fontWeight={700}
+            sx={{ fontSize: "clamp(1rem, 4vw, 1.25rem)" }}
+          >
             Access CrediTrack
           </Typography>
-
-          <Typography variant="body2" color="text.secondary" mt={0.5} px={2}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            mt={0.5}
+            px={2}
+            sx={{ fontSize: "clamp(0.7rem, 2.5vw, 0.875rem)" }}
+          >
             Access is provided for authorized university personnel. Student
             access is available in guest mode.
           </Typography>
@@ -250,17 +191,19 @@ const CrediTrack = () => {
           sx={{
             flexDirection: "column",
             alignItems: "stretch",
-            px: 3,
+            px: { xs: 2, sm: 3 },
             pb: 3,
             gap: 1.5,
           }}
         >
-          {/*  ADMIN LOGIN */}
           <MainButton
             variant="contained"
             fullWidth
-            size="large"
-            sx={{ fontWeight: 600 }}
+            size="medium"
+            sx={{
+              fontWeight: 600,
+              fontSize: "clamp(0.75rem, 2.5vw, 0.875rem)",
+            }}
             onClick={() => {
               handleClose();
               handleAdminClickOpen();
@@ -274,31 +217,32 @@ const CrediTrack = () => {
             color="text.secondary"
             textAlign="center"
             mt={-1}
+            sx={{ fontSize: "clamp(0.65rem, 2vw, 0.75rem)" }}
           >
             University Personnel
           </Typography>
 
-          {/* separator */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              my: 1,
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center", my: 1 }}>
             <Box sx={{ flex: 1, height: 1, bgcolor: "divider" }} />
-            <Typography variant="body2" color="text.secondary" sx={{ mx: 1 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mx: 1, fontSize: "clamp(0.7rem, 2vw, 0.875rem)" }}
+            >
               or
             </Typography>
             <Box sx={{ flex: 1, height: 1, bgcolor: "divider" }} />
           </Box>
 
-          {/* STUDENT GUEST */}
           <SecondaryButton
             variant="outlined"
             fullWidth
-            size="large"
-            sx={{ fontWeight: 600, mt: -1 }}
+            size="medium"
+            sx={{
+              fontWeight: 600,
+              mt: -1,
+              fontSize: "clamp(0.75rem, 2.5vw, 0.875rem)",
+            }}
             onClick={handleSignInAsGuest}
           >
             Sign in as Guest
@@ -308,69 +252,71 @@ const CrediTrack = () => {
             variant="caption"
             color="text.secondary"
             textAlign="center"
+            sx={{ fontSize: "clamp(0.65rem, 2vw, 0.75rem)" }}
           >
             Student access only
           </Typography>
         </DialogActions>
       </Dialog>
+
       {/* LOGIN DIALOG */}
       <Dialog
         open={adminOpen}
         onClose={handleAdminClose}
         maxWidth="xs"
-        slots={{
-          transition: SlideDownTransition,
-        }}
+        slots={{ transition: SlideDownTransition }}
         fullWidth
       >
         <DialogTitle sx={{ textAlign: "center", pb: 1 }}>
-          <Typography variant="inherit" fontWeight={700}>
+          <Typography
+            variant="inherit"
+            fontWeight={700}
+            sx={{ fontSize: "clamp(1rem, 4vw, 1.25rem)" }}
+          >
             Login to CrediTrack
           </Typography>
-
-          <Typography variant="body2" color="text.secondary" mt={0.5} px={2}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            mt={0.5}
+            px={2}
+            sx={{ fontSize: "clamp(0.7rem, 2.5vw, 0.875rem)" }}
+          >
             This access is reserved for authorized university personnel.
           </Typography>
         </DialogTitle>
 
-        <DialogContent sx={{ px: 3, pt: 2 }}>
-          {/* Login Error Alert */}
+        <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: 2 }}>
           {loginError && (
             <Alert
               severity="warning"
-              onClose={() => {
-                handleLoginErrorClose();
-              }}
+              onClose={handleLoginErrorClose}
               sx={{
-                fontSize: "0.75rem",
+                fontSize: "clamp(0.65rem, 2vw, 0.75rem)",
                 py: 0.5,
                 px: 1,
                 minHeight: "auto",
                 alignItems: "center",
-                "& .MuiAlert-icon": {
-                  fontSize: "1rem",
-                  mr: 0.5,
-                },
-                "& .MuiAlert-message": {
-                  padding: 0,
-                },
+                "& .MuiAlert-icon": { fontSize: "1rem", mr: 0.5 },
+                "& .MuiAlert-message": { padding: 0 },
               }}
             >
               {loginError}
             </Alert>
           )}
 
-          {/* Institutional Email */}
           <FormControl
             fullWidth
             margin="normal"
             variant="outlined"
             error={Boolean(errorMessage.emailError)}
           >
-            <InputLabel htmlFor="institutional-email">
+            <InputLabel
+              htmlFor="institutional-email"
+              sx={{ fontSize: "clamp(0.8rem, 2.5vw, 1rem)" }}
+            >
               Institutional Email
             </InputLabel>
-
             <OutlinedInput
               id="institutional-email"
               name="email"
@@ -380,33 +326,36 @@ const CrediTrack = () => {
               autoComplete="email"
               placeholder="name@wesleyan.edu.ph"
               label="Institutional Email"
+              sx={{ fontSize: "clamp(0.8rem, 2.5vw, 1rem)" }}
             />
-
             {errorMessage.emailError && (
-              <FormHelperText>{errorMessage.emailError}</FormHelperText>
+              <FormHelperText sx={{ fontSize: "clamp(0.65rem, 2vw, 0.75rem)" }}>
+                {errorMessage.emailError}
+              </FormHelperText>
             )}
           </FormControl>
 
-          {/* Password */}
           <FormControl
             fullWidth
             sx={{ mt: 1 }}
             variant="outlined"
             error={Boolean(errorMessage.passwordError)}
           >
-            <InputLabel htmlFor="outlined-adornment-password">
+            <InputLabel
+              htmlFor="outlined-adornment-password"
+              sx={{ fontSize: "clamp(0.8rem, 2.5vw, 1rem)" }}
+            >
               Password
             </InputLabel>
-
             <OutlinedInput
               id="outlined-adornment-password"
               name="password"
-              // value={password}
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               label="Password"
               value={login.password}
               onChange={(e) => setLogin({ ...login, password: e.target.value })}
+              sx={{ fontSize: "clamp(0.8rem, 2.5vw, 1rem)" }}
               endAdornment={
                 <InputAdornment position="end">
                   <IconButton
@@ -424,22 +373,19 @@ const CrediTrack = () => {
               }
             />
             {errorMessage.passwordError && (
-              <FormHelperText>{errorMessage.passwordError}</FormHelperText>
+              <FormHelperText sx={{ fontSize: "clamp(0.65rem, 2vw, 0.75rem)" }}>
+                {errorMessage.passwordError}
+              </FormHelperText>
             )}
           </FormControl>
-          {/* <TextField
-            fullWidth
-            label="Password"
-            margin="normal"
-            type="password"
-            autoComplete="current-password"
-          /> */}
 
-          {/* Forgot password */}
           <Box sx={{ textAlign: "right" }}>
             <Typography
               variant="overline"
-              sx={{ cursor: "pointer" }}
+              sx={{
+                cursor: "pointer",
+                fontSize: "clamp(0.65rem, 2vw, 0.75rem)",
+              }}
               onClick={handleForgotPassword}
             >
               Forgot password?
@@ -451,35 +397,33 @@ const CrediTrack = () => {
           sx={{
             flexDirection: "column",
             alignItems: "stretch",
-            px: 3,
+            px: { xs: 2, sm: 3 },
             pb: 3,
             gap: 1.5,
           }}
         >
-          {/* Login button */}
           <MainButton
             variant="contained"
             fullWidth
             size="large"
-            sx={{ fontWeight: 600 }}
+            sx={{ fontWeight: 600, fontSize: "clamp(0.8rem, 3vw, 1rem)" }}
             disabled={isLoading}
-            onClick={() => {
-              handleLoginSubmit(login);
-            }}
+            onClick={() => handleLoginSubmit(login)}
           >
             {isLoading ? "Logging in..." : "Login"}
           </MainButton>
 
-          {/* Cancel */}
           <CancelButton
             variant="outlined"
             fullWidth
             size="large"
-            onClick={() => {
-              handleAdminClose();
-            }}
+            onClick={handleAdminClose}
             disabled={isLoading}
-            sx={{ fontWeight: 600, mt: -1 }}
+            sx={{
+              fontWeight: 600,
+              mt: -1,
+              fontSize: "clamp(0.8rem, 3vw, 1rem)",
+            }}
           >
             Cancel
           </CancelButton>
@@ -487,10 +431,7 @@ const CrediTrack = () => {
       </Dialog>
 
       <Snackbar
-        anchorOrigin={{
-          vertical: "bottom" as const,
-          horizontal: "right" as const,
-        }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         open={openSnack.isSuccess}
         autoHideDuration={3000}
         onClose={closeSnack}
@@ -500,7 +441,7 @@ const CrediTrack = () => {
           onClose={closeSnack}
           severity="success"
           variant="filled"
-          sx={{ width: "100%" }}
+          sx={{ width: "100%", fontSize: "clamp(0.75rem, 2vw, 0.875rem)" }}
         >
           {openSnack.message}
         </Alert>

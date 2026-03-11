@@ -2,10 +2,10 @@ import React from "react";
 import "../../shared/css/About.css";
 import AboutSection from "../../shared/utils/featureItems/AboutSection";
 import { Container, Typography } from "@mui/material";
+
 const About = () => {
   return (
     <div className="about">
-      {/* <div className="container"> */}
       <Container maxWidth="lg">
         <div className="about-content">
           <div>
@@ -16,7 +16,8 @@ const About = () => {
                 gutterBottom
                 sx={{
                   fontWeight: "bold",
-                  color: "#064F1E ",
+                  color: "#064F1E",
+                  fontSize: "clamp(1.25rem, 4vw, 2.125rem)",
                 }}
               >
                 Tracking your courses has never been easier
@@ -31,7 +32,6 @@ const About = () => {
           </div>
         </div>
       </Container>
-      {/* </div> */}
     </div>
   );
 };

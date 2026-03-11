@@ -6,13 +6,16 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CurriculaService from '../../shared/services/CurriculaService';
 import { useQueryClient } from '@tanstack/react-query';
 import CustomSnackbar from '../../shared/component/CustomSnackbar';
+import CourseService from '../../shared/services/CourseService';
+import { Axios, AxiosResponse } from 'axios';
 
 interface CurriculaUploadModalProps {
     open: boolean;
     handleClose: () => void;
+    uploadType?: 'curricula' | 'syllabi';
 }
 
-const CurriculaUploadModal: React.FC<CurriculaUploadModalProps> = ({ open, handleClose }) => {
+const CurriculaUploadModal: React.FC<CurriculaUploadModalProps> = ({ open, handleClose, uploadType }) => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const [loading, setLoading] = useState(false);
@@ -55,12 +58,16 @@ const CurriculaUploadModal: React.FC<CurriculaUploadModalProps> = ({ open, handl
         try {
             const formData = new FormData();
             formData.append('file', selectedFile);
+            let response: any;
+            if (uploadType === 'curricula') {
+                response = await CurriculaService.uploadCurricula(formData);
+            } else if (uploadType === 'syllabi') {
+                response = await CourseService.uploadCourses(formData);
+            }
 
-            
+            console.log('Upload response:', response);
 
-            const response = await CurriculaService.uploadCurricula(formData);
-
-            if (response.data === 200 || response.data === 201) {
+            if (response.status === 200 || response.status === 201) {
                 setSnackbarOpen(true);
                 setSnackbarMessage('File uploaded successfully');
                 
@@ -77,7 +84,7 @@ const CurriculaUploadModal: React.FC<CurriculaUploadModalProps> = ({ open, handl
                 handleClose();
             }, 3000);
             // Refresh the curricula table
-            queryClient.invalidateQueries({ queryKey: ['getCurriculaPagination'] });
+            queryClient.invalidateQueries({ queryKey: ['get'] });
         } catch (err: any) {
             setLoading(false);
             setError(err.response?.data?.message || 'Failed to upload file. Please try again.');
@@ -117,7 +124,7 @@ const CurriculaUploadModal: React.FC<CurriculaUploadModalProps> = ({ open, handl
 
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Typography variant="body2" sx={{ color: '#494b4a' }}>
-                        Supported file types: Excel (.xlsx, .xls) or CSV (.csv)
+                        Supported file types: Excel (.xlsx, .xls)
                     </Typography>
 
                     <Box
@@ -137,7 +144,7 @@ const CurriculaUploadModal: React.FC<CurriculaUploadModalProps> = ({ open, handl
                     >
                         <input
                             hidden
-                            accept=".xlsx,.xls,.csv"
+                            accept=".xlsx,.xls"
                             type="file"
                             onChange={handleFileSelect}
                             disabled={loading}
@@ -178,15 +185,17 @@ const CurriculaUploadModal: React.FC<CurriculaUploadModalProps> = ({ open, handl
                     }}
                 //   disabled={!selectedFile || loading}
                 >
-                    <CustomSnackbar
+                    
+                    {loading ? 'Uploading...' : 'Upload'}
+                </Button>
+            </DialogActions>
+
+            <CustomSnackbar
                         open={snackbarOpen}
                         message={snackbarMessage}
                         severity='success'
                         onClose={handleSnackbarClose}
                     />
-                    {loading ? 'Uploading...' : 'Upload'}
-                </Button>
-            </DialogActions>
         </BootstrapDialog>
     );
 };

@@ -1,5 +1,22 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
 .hero {
-  height: 100vh;
+  min-height: 100svh;
+  height: auto;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -7,20 +24,20 @@
   position: relative;
   width: 100%;
   z-index: 0;
-  overflow: hidden; /* optional, for safety */
+  overflow: hidden;
 }
 
 .hero::before {
   content: "";
   position: absolute;
-  inset: 0; /* shorthand for top:0; left:0; right:0; bottom:0 */
+  inset: 0;
   background-image: url("../assets/images/WUP.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   opacity: 0.1;
-  z-index: -1; /* now safely behind content, but inside hero */
-  pointer-events: none; /* optional: avoid blocking clicks */
+  z-index: -1;
+  pointer-events: none;
 }
 
 .content {
@@ -29,6 +46,7 @@
   justify-content: center;
   position: relative;
   width: 100%;
+  text-align: center;
 }
 
 .hero-text {
@@ -36,16 +54,22 @@
   flex-direction: column;
   align-items: center;
   max-width: 40rem;
+  width: 100%;
+  margin: 0 auto;
+  padding: clamp(2rem, 6vw, 4rem) clamp(1rem, 5vw, 2rem);
 }
 
 .hero-text p {
   text-align: center;
   line-height: 1.6;
-  margin-bottom: 4%;
+  margin-bottom: clamp(1.25rem, 3vw, 2rem);
+  font-size: clamp(0.75rem, 2.5vw, 0.975rem);
 }
 
 .hero-btn {
   background-color: #064f1e !important;
   color: #f9f3b5 !important;
-  padding: 2% 5% !important;
+  font-size: clamp(0.8rem, 1.5vw, 1rem) !important;
+  padding: clamp(8px, 1.5vw, 12px) clamp(20px, 4vw, 36px) !important;
+  border-radius: 6px !important;
 }

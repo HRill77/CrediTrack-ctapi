@@ -32,6 +32,36 @@ class CurriculaService {
         });
     }
 
+    updateCurricula(curricula: any) {
+        return http.put("/curricula/update", curricula);
+    }
+
+    deleteCurricula(id: number) {
+        return http.delete(`/curricula/delete/${id}`);
+    }
+
+    deleteMultipleCurricula(ids: number[]) {
+        return http.delete("/curricula/delete-multiple", {
+            data: {
+                ids: ids
+            }
+        });
+    }
+
+  getCurriculaList(
+    programTitle?: string,
+    courseTitle?: string
+  ) {
+    const params: any = {};
+    if (programTitle) {
+      params.programTitle = programTitle;
+    }
+    if (courseTitle) {
+      params.courseTitle = courseTitle;
+    }
+    return http.get("/curricula/list/by-program-and-course-title", { params });
+  }
+
 }
 
 export default new CurriculaService();

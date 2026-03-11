@@ -1,22 +1,29 @@
 // src/App.tsx
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import CrediTrack from "./component/Main/CrediTrack";
 import { AuthContext } from "./shared/context/AuthContext";
 
 import ProtectedRoute from "./shared/component/ProtectedRoute";
 import GuestDashboard from "./component/GuestDashboard/GuestDashBoard";
-import Dashboard from "./component/Dashboard/Dashboard";
+import Dashboard from "./shared/component/Dashboard/Dashboard";
 import { HashLoader } from "react-spinners";
 import UpdatePassword from "./shared/component/UpdatePassword";
 import ForgotPassword from "./shared/component/ForgotPassword";
-import { R } from "@tanstack/react-query-devtools/build/legacy/ReactQueryDevtools-ChNsB-ya";
 import GuestCreditTrackResult from "./component/GuestDashboard/GuestCreditTrackResult";
+import Account from "./component/Account/Account";
+import About from "./component/Main/About";
+import Developers from "./component/Main/Developers";
+import NotFound from "./shared/component/NotFound";
+
+
+
 
 // import AdminDashboard from './pages/AdminDashboard'; // example future route
 
 const App: React.FC = () => {
   const { isAuthLoading } = useContext(AuthContext);
+  const [isGuestResultOpen, setIsGuestResultOpen] = useState(true);
   const isGuest = sessionStorage.getItem("isGuest") === "true";
   // console.log("isGuest in App.tsx:", isGuest);
   if (isAuthLoading) {
@@ -43,7 +50,12 @@ const App: React.FC = () => {
       <Route path="/" element={<CrediTrack />} />
       <Route
         path="/GuestCreditTrackResult/*"
-        element={<GuestCreditTrackResult />}
+        element={
+          <GuestCreditTrackResult
+            open={isGuestResultOpen}
+            onClose={() => setIsGuestResultOpen(false)}
+          />
+        }
       />
       <Route
         path="/dashboard/*"
@@ -57,9 +69,13 @@ const App: React.FC = () => {
           )
         }
       />
+      <Route path="/account" element={<Account />} />
+
 
       <Route path="/update-password" element={<UpdatePassword />} />
       <Route path="forgot-password" element={<ForgotPassword />} />
+           
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };

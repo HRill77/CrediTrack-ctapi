@@ -17,6 +17,7 @@ http.interceptors.response.use(
 
   (error) => {
     const isLoginPage = window.location.pathname === "/";
+    const isGuest = sessionStorage.getItem("isGuest") === "true";
 
     if (isLoginPage) {
       return Promise.reject(error);
@@ -25,14 +26,18 @@ http.interceptors.response.use(
     // Handle Network Errors
     if (error.message === "Network Error") {
       console.error("Network error detected. Redirecting to login.");
-      redirectToLogin();
+      if (!isGuest) {
+        redirectToLogin();
+      }
       return Promise.reject(error);
     }
 
     // Handle 401/403 Unauthorized or Forbidden
     if (error.response?.status === 401 || error.response?.status === 403) {
       console.warn("Session expired or unauthorized. Redirecting to login.");
-      redirectToLogin();
+      if (!isGuest) {
+        redirectToLogin();
+      }
       return Promise.reject(error);
     }
 

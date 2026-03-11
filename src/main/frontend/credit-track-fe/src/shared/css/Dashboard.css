@@ -8,11 +8,28 @@
   z-index: 1;
   background-color: #f5f5f5;
   overflow: hidden;
- transition:
+  transition:
     width 225ms cubic-bezier(0.4, 0, 0.6, 1),
     margin-left 225ms cubic-bezier(0.4, 0, 0.6, 1);
   margin-left: 72px;
   padding-top: 64px;
+  box-sizing: border-box;
+}
+
+.hero-dashboard2 {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  background-color: #f5f5f5;
+  overflow: hidden;
+  transition:
+    width 225ms cubic-bezier(0.4, 0, 0.6, 1),
+    margin-left 225ms cubic-bezier(0.4, 0, 0.6, 1);
+  padding-top: 64px;
+  width: 100%;
 }
 
 .hero-dashboard.drawer-expanded {
@@ -35,18 +52,24 @@
   justify-content: center;
   padding: 10px 0;
   height: 40px;
-  font-size: 0.75rem;
+  font-size: clamp(0.65rem, 1.5vw, 0.75rem);
   color: #777;
   background-color: #f5f5f5;
 }
 
 .add-user-button {
-  background-color: #064F1E !important;
+  background-color: #064f1e !important;
   color: #fff;
 }
+
+.disabled-button {
+  background-color: #b6b6b6 !important;
+}
+
 .add-user-button:hover {
   background-color: rgba(3, 99, 59, 1) !important;
 }
+
 .add-user-button.MuiLoadingButton-loading {
   color: #fff !important;
 }
@@ -56,14 +79,13 @@
 }
 
 .user-management-header {
-  /* position: sticky; */
-  top: 60px; /* height ng NavBar (adjust if needed) */
-  background-color: #f5f6f3; /* same as hero bg */
+  top: 60px;
+  background-color: #f5f6f3;
   z-index: 10;
-  padding: 12px 0;
+  padding: clamp(8px, 2vw, 12px) 0;
 }
 
- .dashboard-logo {
+.dashboard-logo {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -73,10 +95,44 @@
 
 .dashboard-logo::before {
   content: "";
-  width: 300px;
-  height: 300px;
+  width: clamp(150px, 40vw, 300px);
+  height: clamp(150px, 40vw, 300px);
   background-image: url(../assets/logo/crediTrackLogo2.png);
   background-size: contain;
   background-repeat: no-repeat;
-  
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  .hero-dashboard {
+    width: 100vw !important;
+    margin-left: 0 !important;
+    padding-left: 72px;
+    padding-top: 56px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .hero-dashboard.drawer-expanded {
+    width: 100vw !important;
+    margin-left: 0 !important;
+    padding-left: 72px;
+  }
+
+  .dashboard-footer {
+    font-size: clamp(0.6rem, 3vw, 0.75rem);
+    padding-left: 72px;
+    box-sizing: border-box;
+  }
+
+  .dashboard-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    text-align: center;
+  }
 }
