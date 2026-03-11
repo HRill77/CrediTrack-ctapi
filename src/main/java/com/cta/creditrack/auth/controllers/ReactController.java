@@ -18,9 +18,8 @@ public class ReactController implements ErrorController {
 
     private static final Logger log = LoggerFactory.getLogger(ReactController.class);
 
-    @RequestMapping(value = "/")
-    public String redirect(HttpServletRequest request, Authentication authentication) {
-        log.info("Redirecting to React frontend");
+     @RequestMapping(value = {"/", "/{path:[^\\.]*}"})
+    public String redirect() {
         return "forward:/index.html";
     }
 
