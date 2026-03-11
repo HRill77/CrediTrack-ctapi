@@ -36,7 +36,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/check-temp-password",
                                 "/api/auth/update-temp-password",
                                 "/api/auth/forgot-password", "/api/ingest/curricula", "/api/student/**",
