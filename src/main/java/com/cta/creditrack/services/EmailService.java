@@ -50,36 +50,50 @@ public class EmailService {
     String body = "<html>" +
         "<head>" +
         "<style>" +
-        "body { font-family: Arial, sans-serif; background-color: #f4f4f4; }" +
-        ".container { max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }"
+        "body { font-family: Arial, sans-serif; background-color: #e8e8e8; margin: 0; padding: 0; }" +
+        ".wrapper { padding: 30px 20px; }" +
+        ".title { text-align: center; font-size: 24px; font-weight: bold; color: #064F1E; margin-bottom: 20px; }" +
+        ".container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px 40px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }"
         +
-        ".header { color: #333333; margin-bottom: 20px; }" +
-        ".password-box { background-color: #f0f0f0; border: 2px solid #007bff; border-radius: 5px; padding: 20px; margin: 20px 0; text-align: center; }"
+        "p { color: #333333; font-size: 15px; line-height: 1.6; margin: 0 0 14px 0; }" +
+        "ul { color: #333333; font-size: 15px; line-height: 1.8; padding-left: 20px; margin: 0 0 14px 0; }" +
+        ".password-box { background-color: #f5f6f3; border: 2px solid #064F1E; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center; }"
         +
-        ".password-text { font-size: 32px; font-weight: bold; color: #007bff; letter-spacing: 3px; font-family: 'Courier New', monospace; }"
+        ".password-text { font-size: 30px; font-weight: bold; color: #064F1E; letter-spacing: 4px; font-family: 'Courier New', monospace; }"
         +
-        ".footer { color: #666666; font-size: 12px; margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 20px; }"
-        +
+        ".signature { margin-top: 20px; }" +
+        ".signature p { margin: 0; }" +
+        ".footer-bar { max-width: 600px; margin: 0 auto; padding: 20px 40px; border-top: 1px solid #e0e0e0; }" +
+        ".footer-brand { font-size: 18px; font-weight: bold; color: #064F1E; margin: 0 0 4px 0; }" +
+        ".footer-sub { font-size: 12px; color: #666666; margin: 0; line-height: 1.6; }" +
         "</style>" +
         "</head>" +
         "<body>" +
+        "<div class='wrapper'>" +
+        "<div class='title'>Your Temporary CrediTrack Password</div>" +
         "<div class='container'>" +
-        "<div class='header'>" +
-        "<h2>Welcome!</h2>" +
-        "<p>Your temporary password has been generated. Please use the password below to access your account:</p>"
+        "<p>Greetings!</p>" +
+        "<p>A temporary password has been generated for your CrediTrack account. Please use the password below to log in:</p>"
         +
-        "</div>" +
         "<div class='password-box'>" +
         "<div class='password-text'>" + tempPassword + "</div>" +
         "</div>" +
         "<p><strong>Instructions:</strong></p>" +
         "<ul>" +
-        "<li>Use the above password to log in to your account</li>" +
-        "<li>Change your password immediately after your first login</li>" +
-        "<li>This password expires in 24 hours</li>" +
+        "<li>Use the above password to log in to your account.</li>" +
+        "<li>Change your password immediately after your first login.</li>" +
+        "<li>This password expires in 24 hours.</li>" +
         "</ul>" +
-        "<div class='footer'>" +
-        "<p>This is an automated message. Please do not reply to this email.</p>" +
+        "<p>If you did not request this, please contact your system administrator immediately.</p>" +
+        "<div class='signature'>" +
+        "<p>Best regards,</p>" +
+        "<p><strong>CrediTrack</strong></p>" +
+        "</div>" +
+        "</div>" +
+        "<div class='footer-bar'>" +
+        "<p class='footer-brand'>CrediTrack</p>" +
+        "<p class='footer-sub'>College of Engineering and Computer Technology<br/>Copyright &copy; 2026 CrediTrack. All rights reserved.</p>"
+        +
         "</div>" +
         "</div>" +
         "</body>" +
