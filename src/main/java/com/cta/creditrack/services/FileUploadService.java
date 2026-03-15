@@ -30,18 +30,26 @@ public class FileUploadService {
     private TransactionService transactionService;
 
     // Allowed file types
-    // private static final String[] ALLOWED_FILE_TYPES = {"application/pdf", "image/jpeg", "image/jpg"};
+    // private static final String[] ALLOWED_FILE_TYPES = {"application/pdf",
+    // "image/jpeg", "image/jpg"};
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-    public FileUpload uploadFile(MultipartFile torFile, MultipartFile cdFile,  Long studentId, String description) throws IOException {
+    public FileUpload uploadFile(MultipartFile torFile, MultipartFile cdFile, Long studentId, String description)
+            throws IOException {
         try {
             // Validate file
             if (torFile.isEmpty() && cdFile.isEmpty()) {
                 throw new IllegalArgumentException("File is empty");
             }
 
-            if (!fileUtility.isAllowedFileType(torFile.getContentType()) || !fileUtility.isAllowedFileType(cdFile.getContentType())) {
-                throw new IllegalArgumentException("File type not allowed. Only PDF and JPEG files are allowed.");
+            if ("application/pdf".equals(torFile.getContentType())
+                    || "application/pdf".equals(cdFile.getContentType())) {
+                throw new IllegalArgumentException("PDF files are not allowed. Only JPG and JPEG files are accepted.");
+            }
+
+            if (!fileUtility.isAllowedFileType(torFile.getContentType())
+                    || !fileUtility.isAllowedFileType(cdFile.getContentType())) {
+                throw new IllegalArgumentException("File type not allowed. Only JPG and JPEG files are allowed.");
             }
 
             if (torFile.getSize() > MAX_FILE_SIZE || cdFile.getSize() > MAX_FILE_SIZE) {
@@ -49,7 +57,7 @@ public class FileUploadService {
             }
 
             Student student = studentRepository.findById(studentId)
-                    .orElseThrow(() -> new IllegalArgumentException("Student not found with ID: " + studentId)); 
+                    .orElseThrow(() -> new IllegalArgumentException("Student not found with ID: " + studentId));
             // Create FileUpload entity
             FileUpload fileUpload = new FileUpload();
             fileUpload.setTorFilename(torFile.getOriginalFilename());
@@ -66,7 +74,8 @@ public class FileUploadService {
 
             // Log transaction
             Transaction transaction = new Transaction();
-            transaction.setActionDetails("Uploaded file: " + torFile.getOriginalFilename() + " for student ID: " + studentId);
+            transaction.setActionDetails(
+                    "Uploaded file: " + torFile.getOriginalFilename() + " for student ID: " + studentId);
             transaction.setActionType("FILE_UPLOAD");
             transactionService.postTransaction(transaction, null);
 
@@ -126,11 +135,11 @@ public class FileUploadService {
     }
 
     // public boolean isAllowedFileType(String contentType) {
-    //     for (String allowedType : ALLOWED_FILE_TYPES) {
-    //         if (contentType != null && contentType.equals(allowedType)) {
-    //             return true;
-    //         }
-    //     }
-    //     return false;
+    // for (String allowedType : ALLOWED_FILE_TYPES) {
+    // if (contentType != null && contentType.equals(allowedType)) {
+    // return true;
+    // }
+    // }
+    // return false;
     // }
 }
