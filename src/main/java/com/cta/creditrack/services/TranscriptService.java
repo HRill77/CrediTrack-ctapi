@@ -24,8 +24,6 @@ public class TranscriptService {
     // private final UniversityLayoutRegistry layoutRegistry;
     private final UniversityLayoutRepository layoutRepository;
 
-    
-
     public List<TranscriptDto> processTranscript(
             List<MultipartFile> files,
             String studentEmail) throws Exception {
@@ -37,10 +35,15 @@ public class TranscriptService {
                 continue;
             }
 
+            String contentType = file.getContentType();
+            if ("application/pdf".equals(contentType)) {
+                throw new IllegalArgumentException("PDF files are not allowed. Please upload JPG or PNG images only.");
+            }
+
             String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null && originalFilename.contains(".") 
-                ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
-                : ".jpg";
+            String extension = originalFilename != null && originalFilename.contains(".")
+                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                    : ".jpg";
             File temp = File.createTempFile("transcript", extension);
             file.transferTo(temp);
 
@@ -208,7 +211,8 @@ public class TranscriptService {
 
             String text = w.getText();
 
-            // Match various subject code patterns (2-10 chars with letters, numbers, hyphens)
+            // Match various subject code patterns (2-10 chars with letters, numbers,
+            // hyphens)
             if (text.matches("[A-Z][A-Z0-9\\-]{1,9}") && text.length() >= 2)
                 subjectXs.add(w.getX());
 
@@ -325,9 +329,9 @@ public class TranscriptService {
                 // GRADE - Match decimal grades (1.00, 2.25) or whole grades (86, 90, PASSED)
                 if (grade == null &&
                         Math.abs(x - layout.gradeX) < 150 &&
-                        (text.matches("\\d+\\.\\d{2}") || 
-                         text.matches("\\d{2}(?!\\d{2})") ||
-                         text.equals("PASSED"))) {
+                        (text.matches("\\d+\\.\\d{2}") ||
+                                text.matches("\\d{2}(?!\\d{2})") ||
+                                text.equals("PASSED"))) {
 
                     grade = text;
                 }
@@ -352,7 +356,7 @@ public class TranscriptService {
             // Only process if we found a grade
             if (grade != null) {
                 boolean foundSubject = false;
-                
+
                 for (VisionWordDto w : row) {
                     String text = w.getText();
                     int x = w.getX();
@@ -414,8 +418,7 @@ public class TranscriptService {
                 "COURSE", "CODE", "DESCRIPTION", "TITLE", "SUBJECT",
                 "FINAL", "GRADE", "CREDITS", "RE", "EXAM", "UNITS",
                 "TERM", "SEM", "SEMESTER", "FOR", "OF", "AND", "THE",
-                "IN", "WITH", "ON", "AT", "TO", "OR", "BY", "A", "AS"
-        ));
+                "IN", "WITH", "ON", "AT", "TO", "OR", "BY", "A", "AS"));
         return commonWords.contains(text);
     }
 
