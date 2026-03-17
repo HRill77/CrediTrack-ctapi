@@ -1,4 +1,10 @@
 spring:
+  
+  mvc:
+    async:
+      request-timeout: 7200000
+
+
   application:
     name: Credit Track Application
 
