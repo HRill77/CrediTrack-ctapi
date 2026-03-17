@@ -54,6 +54,10 @@ const EvaluationTable = () => {
   const { isAuthLoading, currentUser } = useContext(AuthContext);
 
   const [rows, setRows] = useState<EvaluationInterface[]>([]);
+  console.log(
+    "🚀 ~ file: EvaluationTable.tsx:50 ~ EvaluationTable ~ rows:",
+    rows,
+  );
   const [loading, setLoading] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(
     null,
@@ -123,100 +127,95 @@ const EvaluationTable = () => {
       const isProgramHead = currentUser?.role === "ROLE_PROGRAM_HEAD";
       const programFilter = currentUser?.program;
 
-      const storedGuestQueue = JSON.parse(
-        localStorage.getItem("guest_approval_queue") || "[]",
-      );
+      // const storedGuestQueue = JSON.parse(
+      //   localStorage.getItem("guest_approval_queue") || "[]",
+      // );
 
-      const guestRows = (storedGuestQueue || [])
-        .filter(
-          (entry: any) => !isProgramHead || entry.toProgram === programFilter,
-        )
-        .map((entry: any) => {
-          const splitName = (entry.studentName || "").split(",");
-          const lastName = splitName[0]?.trim() || "";
-          const firstName = splitName[1]?.trim() || "";
-          return {
-            studentId: entry.id,
-            studentName: entry.studentName,
-            firstName: firstName || entry.firstName || "",
-            lastName: lastName || entry.lastName || "",
-            studentEmail: entry.studentEmail || entry.email || "",
-            fromUniversity: entry.fromUniversity || "",
-            fromProgram: entry.fromProgram || "",
-            toUniversity:
-              entry.toUniversity || "Wesleyan University - Philippines",
-            toProgram: entry.toProgram || "",
-            createdAt: entry.createdAt,
-            approvedDate:
-              entry.approvedDate ||
-              entry.approvals?.approvedDate ||
-              entry.createdAt ||
-              null,
-            approvals: entry.approvals || {
-              approvedDate: entry.approvedDate || entry.createdAt || null,
-            },
-            evaluation: entry.evaluations,
-            isGuest: true,
-          };
-        });
+      // const guestRows = (storedGuestQueue || [])
+      //   .filter(
+      //     (entry: any) => !isProgramHead || entry.toProgram === programFilter,
+      //   )
+      //   .map((entry: any) => {
+      //     const splitName = (entry.studentName || "").split(",");
+      //     const lastName = splitName[0]?.trim() || "";
+      //     const firstName = splitName[1]?.trim() || "";
+      //     return {
+      //       studentId: entry.id,
+      //       studentName: entry.studentName,
+      //       firstName: firstName || entry.firstName || "",
+      //       lastName: lastName || entry.lastName || "",
+      //       studentEmail: entry.studentEmail || entry.email || "",
+      //       fromUniversity: entry.fromUniversity || "",
+      //       fromProgram: entry.fromProgram || "",
+      //       toUniversity:
+      //         entry.toUniversity || "Wesleyan University - Philippines",
+      //       toProgram: entry.toProgram || "",
+      //       createdAt: entry.createdAt,
+      //       approvedDate:
+      //         entry.approvedDate ||
+      //         entry.approvals?.approvedDate ||
+      //         entry.createdAt ||
+      //         null,
+      //       approvals: entry.approvals || {
+      //         approvedDate: entry.approvedDate || entry.createdAt || null,
+      //       },
+      //       evaluation: entry.evaluations,
+      //       isGuest: true,
+      //     };
+      //   });
 
-      const guestFullStudents = (storedGuestQueue || [])
-        .filter(
-          (entry: any) => !isProgramHead || entry.toProgram === programFilter,
-        )
-        .map((entry: any) => {
-          const splitName = (entry.studentName || "").split(",");
-          const lastName = splitName[0]?.trim() || "";
-          const firstName = splitName[1]?.trim() || "";
-          return {
-            ...entry,
-            studentId: entry.id,
-            studentName: entry.studentName,
-            firstName: firstName || entry.firstName || "",
-            lastName: lastName || entry.lastName || "",
-            yearLevel: entry.yearLevel || "",
-            fromUniversity: entry.fromUniversity || "",
-            toUniversity:
-              entry.toUniversity || "Wesleyan University - Philippines",
-            fromProgram: entry.fromProgram || "",
-            toProgram: entry.toProgram || "",
-            approvedDate:
-              entry.approvedDate ||
-              entry.approvals?.approvedDate ||
-              entry.createdAt ||
-              null,
-            approvals: entry.approvals || {
-              approvedDate:
-                entry.approvalDate ||
-                entry.approvedDate ||
-                entry.createdAt ||
-                null,
-            },
-            evaluation:
-              entry.evaluations?.map((e: any, idx: number) => ({
-                transcript: {
-                  subjectCode: e.subjectCode,
-                  courseName: e.courseName,
-                  grade: e.grade,
-                },
-                curricula: { units: e.units, id: null },
-                remarks: e.remarks,
-                confidenceScore: e.confidenceScore,
-                finalApproved: e.creditedUnits > 0,
-                id: `guest-${idx}`,
-              })) || [],
-          };
-        });
+      // const guestFullStudents = (storedGuestQueue || [])
+      //   .filter(
+      //     (entry: any) => !isProgramHead || entry.toProgram === programFilter,
+      //   )
+      //   .map((entry: any) => {
+      //     const splitName = (entry.studentName || "").split(",");
+      //     const lastName = splitName[0]?.trim() || "";
+      //     const firstName = splitName[1]?.trim() || "";
+      //     return {
+      //       ...entry,
+      //       studentId: entry.id,
+      //       studentName: entry.studentName,
+      //       firstName: firstName || entry.firstName || "",
+      //       lastName: lastName || entry.lastName || "",
+      //       yearLevel: entry.yearLevel || "",
+      //       fromUniversity: entry.fromUniversity || "",
+      //       toUniversity:
+      //         entry.toUniversity || "Wesleyan University - Philippines",
+      //       fromProgram: entry.fromProgram || "",
+      //       toProgram: entry.toProgram || "",
+      //       approvedDate:
+      //         entry.approvedDate ||
+      //         entry.approvals?.approvedDate ||
+      //         entry.createdAt ||
+      //         null,
+      //       approvals: entry.approvals || {
+      //         approvedDate:
+      //           entry.approvalDate ||
+      //           entry.approvedDate ||
+      //           entry.createdAt ||
+      //           null,
+      //       },
+      //       evaluation:
+      //         entry.evaluations?.map((e: any, idx: number) => ({
+      //           transcript: {
+      //             subjectCode: e.subjectCode,
+      //             courseName: e.courseName,
+      //             grade: e.grade,
+      //           },
+      //           curricula: { units: e.units, id: null },
+      //           remarks: e.remarks,
+      //           confidenceScore: e.confidenceScore,
+      //           finalApproved: e.creditedUnits > 0,
+      //           id: `guest-${idx}`,
+      //         })) || [],
+      //     };
+      //   });
 
       const filteredRows =
         isProgramHead && programFilter
-          ? [
-              ...data.rows.filter(
-                (row: any) => row.toProgram === programFilter,
-              ),
-              ...guestRows,
-            ]
-          : [...data.rows, ...guestRows];
+          ? [...data.rows.filter((row: any) => row.toProgram === programFilter)]
+          : [...data.rows];
 
       const filteredFullStudents =
         isProgramHead && programFilter
@@ -224,9 +223,8 @@ const EvaluationTable = () => {
               ...data.fullStudentsData.filter(
                 (student: any) => student.toProgram === programFilter,
               ),
-              ...guestFullStudents,
             ]
-          : [...data.fullStudentsData, ...guestFullStudents];
+          : [...data.fullStudentsData];
 
       // Keep totalElements in sync with rows count
       setRows(filteredRows);
