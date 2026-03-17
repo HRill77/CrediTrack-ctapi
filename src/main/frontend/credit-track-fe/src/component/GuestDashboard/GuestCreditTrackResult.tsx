@@ -171,92 +171,92 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
     "success",
   );
 
-  const handleSendForApproval = async () => {
-    const isGuest = sessionStorage.getItem("isGuest") === "true";
+  // const handleSendForApproval = async () => {
+  //   const isGuest = sessionStorage.getItem("isGuest") === "true";
 
-    const guestPayload = {
-      id: studentId || Date.now(),
-      studentName:
-        `${studentData?.lastname || ""}, ${studentData?.firstname || ""}`.trim(),
-      studentEmail: studentData?.email || "",
-      fromUniversity: transferData?.fromUniversity || "",
-      fromProgram: transferData?.fromProgram || "",
-      toProgram: transferData?.toProgram || "",
-      toUniversity:
-        transferData?.toUniversity || "Wesleyan University - Philippines",
-      createdAt: new Date().toISOString(),
-      evaluations: displayData.flatMap((section) =>
-        section.courses.map((course) => ({
-          subjectCode: course.subjectCode,
-          courseName: course.courseName,
-          units: course.units,
-          creditedUnits: course.creditedUnits,
-          grade: course.grade,
-          remarks: course.remarks,
-          confidenceScore: course.confidenceScore,
-        })),
-      ),
-    };
+  //   const guestPayload = {
+  //     id: studentId || Date.now(),
+  //     studentName:
+  //       `${studentData?.lastname || ""}, ${studentData?.firstname || ""}`.trim(),
+  //     studentEmail: studentData?.email || "",
+  //     fromUniversity: transferData?.fromUniversity || "",
+  //     fromProgram: transferData?.fromProgram || "",
+  //     toProgram: transferData?.toProgram || "",
+  //     toUniversity:
+  //       transferData?.toUniversity || "Wesleyan University - Philippines",
+  //     createdAt: new Date().toISOString(),
+  //     evaluations: displayData.flatMap((section) =>
+  //       section.courses.map((course) => ({
+  //         subjectCode: course.subjectCode,
+  //         courseName: course.courseName,
+  //         units: course.units,
+  //         creditedUnits: course.creditedUnits,
+  //         grade: course.grade,
+  //         remarks: course.remarks,
+  //         confidenceScore: course.confidenceScore,
+  //       })),
+  //     ),
+  //   };
 
-    if (isGuest) {
-      const existing = JSON.parse(
-        localStorage.getItem("guest_approval_queue") || "[]",
-      );
-      localStorage.setItem(
-        "guest_approval_queue",
-        JSON.stringify([...existing, guestPayload]),
-      );
-      setSnackbarMessage(
-        "CrediTrack result added to guest approval queue for program head.",
-      );
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
-      return;
-    }
+  //   if (isGuest) {
+  //     const existing = JSON.parse(
+  //       localStorage.getItem("guest_approval_queue") || "[]",
+  //     );
+  //     localStorage.setItem(
+  //       "guest_approval_queue",
+  //       JSON.stringify([...existing, guestPayload]),
+  //     );
+  //     setSnackbarMessage(
+  //       "CrediTrack result added to guest approval queue for program head.",
+  //     );
+  //     setSnackbarSeverity("success");
+  //     setSnackbarOpen(true);
+  //     return;
+  //   }
 
-    if (!studentId) {
-      setSnackbarMessage("Unable to send for approval: missing student ID.");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-      return;
-    }
+  //   if (!studentId) {
+  //     setSnackbarMessage("Unable to send for approval: missing student ID.");
+  //     setSnackbarSeverity("error");
+  //     setSnackbarOpen(true);
+  //     return;
+  //   }
 
-    try {
-      const payload = {
-        studentId,
-        toProgram: transferData?.toProgram,
-        fromProgram: transferData?.fromProgram,
-        evaluations: displayData.flatMap((section) =>
-          section.courses.map((course) => ({
-            evaluationId: null,
-            transcriptId: null,
-            courseName: course.courseName,
-            subjectCode: course.subjectCode,
-            units: course.units,
-            grade: course.grade,
-            curriculaId: null,
-            remarks: course.remarks,
-            confidenceScore: course.confidenceScore,
-            finalApproved: course.creditedUnits > 0,
-            deleted: false,
-          })),
-        ),
-      };
-      console.debug("Send for approval payload:", payload);
-      await TranscriptEvaluationService.upsertEvaluations(payload);
+  //   try {
+  //     const payload = {
+  //       studentId,
+  //       toProgram: transferData?.toProgram,
+  //       fromProgram: transferData?.fromProgram,
+  //       evaluations: displayData.flatMap((section) =>
+  //         section.courses.map((course) => ({
+  //           evaluationId: null,
+  //           transcriptId: null,
+  //           courseName: course.courseName,
+  //           subjectCode: course.subjectCode,
+  //           units: course.units,
+  //           grade: course.grade,
+  //           curriculaId: null,
+  //           remarks: course.remarks,
+  //           confidenceScore: course.confidenceScore,
+  //           finalApproved: course.creditedUnits > 0,
+  //           deleted: false,
+  //         })),
+  //       ),
+  //     };
+  //     console.debug("Send for approval payload:", payload);
+  //     await TranscriptEvaluationService.upsertEvaluations(payload);
 
-      setSnackbarMessage("CrediTrack result sent for approval successfully.");
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
-    } catch (error: any) {
-      console.error("Send for approval failed:", error);
-      setSnackbarMessage(
-        error?.response?.data?.message || "Failed to send for approval.",
-      );
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-    }
-  };
+  //     setSnackbarMessage("CrediTrack result sent for approval successfully.");
+  //     setSnackbarSeverity("success");
+  //     setSnackbarOpen(true);
+  //   } catch (error: any) {
+  //     console.error("Send for approval failed:", error);
+  //     setSnackbarMessage(
+  //       error?.response?.data?.message || "Failed to send for approval.",
+  //     );
+  //     setSnackbarSeverity("error");
+  //     setSnackbarOpen(true);
+  //   }
+  // };
 
   const graduationYear = calculateGraduationYear();
 
@@ -476,7 +476,7 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
             >
               Download PDF
             </Button>
-            <Button
+            {/* <Button
               variant="contained"
               onClick={handleSendForApproval}
               sx={{
@@ -487,7 +487,7 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
               }}
             >
               Send for Approval
-            </Button>
+            </Button> */}
             <Button
               variant="outlined"
               onClick={onClose}
