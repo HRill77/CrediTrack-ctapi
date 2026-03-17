@@ -48,7 +48,7 @@ import ConfirmDialog from "../../shared/component/ConfirmDialog";
 import CustomSnackbar from "../../shared/component/CustomSnackbar";
 import EvaluationDetailModal from "./EvaluationDetailModal";
 import WhiteListService from "../../shared/services/WhiteListService";
-import EmailService from "../../shared/services/EmailService";
+import EvaluationEmailService from "../../shared/services/EvaluationEmailService";
 
 const EvaluationTable = () => {
   const { isAuthLoading, currentUser } = useContext(AuthContext);
@@ -120,12 +120,121 @@ const EvaluationTable = () => {
 
   useEffect(() => {
     if (data) {
-      setRows(data.rows);
-      setFullStudentsData(data.fullStudentsData);
-      setTotalElements(data.totalElements);
+      const isProgramHead = currentUser?.role === "ROLE_PROGRAM_HEAD";
+      const programFilter = currentUser?.program;
+
+      const storedGuestQueue = JSON.parse(
+        localStorage.getItem("guest_approval_queue") || "[]",
+      );
+
+      const guestRows = (storedGuestQueue || [])
+        .filter(
+          (entry: any) => !isProgramHead || entry.toProgram === programFilter,
+        )
+        .map((entry: any) => {
+          const splitName = (entry.studentName || "").split(",");
+          const lastName = splitName[0]?.trim() || "";
+          const firstName = splitName[1]?.trim() || "";
+          return {
+            studentId: entry.id,
+            studentName: entry.studentName,
+            firstName: firstName || entry.firstName || "",
+            lastName: lastName || entry.lastName || "",
+            studentEmail: entry.studentEmail || entry.email || "",
+            fromUniversity: entry.fromUniversity || "",
+            fromProgram: entry.fromProgram || "",
+            toUniversity:
+              entry.toUniversity || "Wesleyan University - Philippines",
+            toProgram: entry.toProgram || "",
+            createdAt: entry.createdAt,
+            approvedDate:
+              entry.approvedDate ||
+              entry.approvals?.approvedDate ||
+              entry.createdAt ||
+              null,
+            approvals: entry.approvals || {
+              approvedDate: entry.approvedDate || entry.createdAt || null,
+            },
+            evaluation: entry.evaluations,
+            isGuest: true,
+          };
+        });
+
+      const guestFullStudents = (storedGuestQueue || [])
+        .filter(
+          (entry: any) => !isProgramHead || entry.toProgram === programFilter,
+        )
+        .map((entry: any) => {
+          const splitName = (entry.studentName || "").split(",");
+          const lastName = splitName[0]?.trim() || "";
+          const firstName = splitName[1]?.trim() || "";
+          return {
+            ...entry,
+            studentId: entry.id,
+            studentName: entry.studentName,
+            firstName: firstName || entry.firstName || "",
+            lastName: lastName || entry.lastName || "",
+            yearLevel: entry.yearLevel || "",
+            fromUniversity: entry.fromUniversity || "",
+            toUniversity:
+              entry.toUniversity || "Wesleyan University - Philippines",
+            fromProgram: entry.fromProgram || "",
+            toProgram: entry.toProgram || "",
+            approvedDate:
+              entry.approvedDate ||
+              entry.approvals?.approvedDate ||
+              entry.createdAt ||
+              null,
+            approvals: entry.approvals || {
+              approvedDate:
+                entry.approvalDate ||
+                entry.approvedDate ||
+                entry.createdAt ||
+                null,
+            },
+            evaluation:
+              entry.evaluations?.map((e: any, idx: number) => ({
+                transcript: {
+                  subjectCode: e.subjectCode,
+                  courseName: e.courseName,
+                  grade: e.grade,
+                },
+                curricula: { units: e.units, id: null },
+                remarks: e.remarks,
+                confidenceScore: e.confidenceScore,
+                finalApproved: e.creditedUnits > 0,
+                id: `guest-${idx}`,
+              })) || [],
+          };
+        });
+
+      const filteredRows =
+        isProgramHead && programFilter
+          ? [
+              ...data.rows.filter(
+                (row: any) => row.toProgram === programFilter,
+              ),
+              ...guestRows,
+            ]
+          : [...data.rows, ...guestRows];
+
+      const filteredFullStudents =
+        isProgramHead && programFilter
+          ? [
+              ...data.fullStudentsData.filter(
+                (student: any) => student.toProgram === programFilter,
+              ),
+              ...guestFullStudents,
+            ]
+          : [...data.fullStudentsData, ...guestFullStudents];
+
+      // Keep totalElements in sync with rows count
+      setRows(filteredRows);
+      setFullStudentsData(filteredFullStudents);
+      setTotalElements(filteredRows.length);
       setLoading(false);
     }
-  }, [data]);
+  }, [data, currentUser]);
 
   useEffect(() => {
     if (error) {
@@ -170,6 +279,15 @@ const EvaluationTable = () => {
     const pageHeight = doc.internal.pageSize.getHeight();
     let startY = margin;
 
+    const pdfFirstName =
+      studentData.firstName ||
+      (studentData.studentName?.split(",")[1] || "").trim() ||
+      "";
+    const pdfLastName =
+      studentData.lastName ||
+      (studentData.studentName?.split(",")[0] || "").trim() ||
+      "";
+
     doc.setFontSize(14);
     doc.setTextColor(6, 79, 30);
     doc.text("CrediTrack Evaluation Results", margin, startY);
@@ -177,7 +295,7 @@ const EvaluationTable = () => {
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text(
-      `Name: ${studentData.lastName}, ${studentData.firstName} ${studentData.middleName || ""}`,
+      `Name: ${pdfLastName}${pdfFirstName ? `, ${pdfFirstName}` : ""}`,
       margin,
       startY,
     );
@@ -197,13 +315,13 @@ const EvaluationTable = () => {
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text(
-      `From: ${studentData.fromUniversity} - ${studentData.fromProgram}`,
+      `From: ${studentData.fromUniversity || "N/A"} - ${studentData.fromProgram || "N/A"}`,
       margin,
       startY,
     );
     startY += 6;
     doc.text(
-      `To: ${studentData.toUniversity} - ${studentData.toProgram}`,
+      `To: ${studentData.toUniversity || "Wesleyan University"} - ${studentData.toProgram || "N/A"}`,
       margin,
       startY,
     );
@@ -371,31 +489,28 @@ const EvaluationTable = () => {
       { align: "right" },
     );
 
-    const hasApprovedDate = studentData.approvals?.approvedDate;
+    const approvalDate =
+      studentData.approvedDate ||
+      studentData.approvals?.approvedDate ||
+      studentData.createdAt ||
+      null;
+    const signatureName = currentUser?.fullName || "Program Head";
     doc.setFontSize(11);
-    if (hasApprovedDate) {
+    if (approvalDate) {
       doc.setTextColor(204, 0, 0);
       doc.text("sgd.", margin, footerBaseY);
       doc.setTextColor(0, 0, 0);
-      doc.text(
-        currentUser?.fullName || "Program Head",
-        margin,
-        footerBaseY + 6,
-      );
+      doc.text(signatureName, margin, footerBaseY + 6);
       doc.text("Program Head", margin, footerBaseY + 10);
       doc.text(
-        new Date(hasApprovedDate).toISOString().split("T")[0],
+        new Date(approvalDate).toISOString().split("T")[0],
         margin,
         footerBaseY + 14,
       );
     } else {
       doc.setTextColor(0, 0, 0);
       doc.text("_________________________", margin, footerBaseY);
-      doc.text(
-        currentUser?.fullName || "Program Head",
-        margin,
-        footerBaseY + 8,
-      );
+      doc.text(signatureName, margin, footerBaseY + 8);
       doc.text("Program Head", margin, footerBaseY + 12);
     }
 
@@ -476,7 +591,11 @@ const EvaluationTable = () => {
       const studentIds = bulkSendMode
         ? Array.from(rowSelectionModel.ids).map((id) => parseInt(String(id)))
         : [parseInt(selectedStudentIdForEmail || "0")];
-      await EmailService.sendEvaluationEmail(studentIds, selectedEmail.email);
+      await EvaluationEmailService.sendEvaluationEmail(
+        studentIds,
+        selectedEmail.email,
+        currentUser?.id,
+      );
       setSnackbarMessage(
         `Email sent successfully to ${studentIds.length} student(s).`,
       );

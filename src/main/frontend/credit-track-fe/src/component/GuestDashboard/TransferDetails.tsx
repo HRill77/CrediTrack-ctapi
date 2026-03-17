@@ -59,7 +59,12 @@ const TransferDetails: React.FC<TransferDetailsProps> = ({
     mt: 0.5,
     fontSize: "clamp(0.65rem, 1.5vw, 0.75rem)",
   };
-  const inputSx = { fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)" };
+  const inputSx = {
+    fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)",
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+      borderColor: "#064F1E",
+    },
+  };
 
   return (
     <Box

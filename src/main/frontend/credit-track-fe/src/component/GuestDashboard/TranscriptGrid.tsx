@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Button, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Alert } from "@mui/material";
 import {
-  DataGridPro,
-  GridColDef,
-  GridRowId,
-} from "@mui/x-data-grid-pro";
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+} from "@mui/material";
+import { DataGridPro, GridColDef, GridRowId } from "@mui/x-data-grid-pro";
 import { TranscriptRow } from "../../shared/interface/TranscriptRow";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-
 
 interface Props {
   initialRows: TranscriptRow[];
@@ -19,52 +25,43 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
   const [rows, setRows] = useState<TranscriptRow[]>(initialRows);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<string | null>(null);
-  const [gradeError, setGradeError] = useState<{ rowId: string | null; message: string | null }>({ rowId: null, message: null });
-  const [creditsError, setCreditsError] = useState<{ rowId: string | null; message: string | null }>({ rowId: null, message: null });
+  const [gradeError, setGradeError] = useState<{
+    rowId: string | null;
+    message: string | null;
+  }>({ rowId: null, message: null });
+  const [creditsError, setCreditsError] = useState<{
+    rowId: string | null;
+    message: string | null;
+  }>({ rowId: null, message: null });
 
-  // Sync rows when initialRows prop changes
   useEffect(() => {
     setRows(initialRows);
   }, [initialRows]);
 
- 
-
-  // Validate grade format: 10-99 or 1.00-5.00
   const isValidGrade = (value: string): boolean => {
-    if (!value) return true; // Allow empty values
-    
+    if (!value) return true;
     const trimmedValue = value.trim();
-    
-    // Check for integer format (10-99)
     const intPattern = /^\d+$/;
     if (intPattern.test(trimmedValue)) {
       const num = parseInt(trimmedValue);
       return num >= 10 && num <= 99;
     }
-    
-    // Check for decimal format (1.00-5.00)
     const decimalPattern = /^\d+\.\d{1,2}$/;
     if (decimalPattern.test(trimmedValue)) {
       const num = parseFloat(trimmedValue);
-      return num >= 1.00 && num <= 5.00;
+      return num >= 1.0 && num <= 5.0;
     }
-    
     return false;
   };
 
-  // Validate credits: only positive integers
   const isValidCredits = (value: string): boolean => {
-    if (!value) return true; // Allow empty values
-    
+    if (!value) return true;
     const trimmedValue = value.trim();
-    
-    // Only allow positive integers
     const intPattern = /^\d+$/;
     if (intPattern.test(trimmedValue)) {
       const num = parseInt(trimmedValue);
       return num >= 0;
     }
-    
     return false;
   };
 
@@ -74,7 +71,8 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
   };
 
   const handleAddRow = () => {
-    const maxId = rows.length > 0 ? Math.max(...rows.map(r => parseInt(r.id))) : 0;
+    const maxId =
+      rows.length > 0 ? Math.max(...rows.map((r) => parseInt(r.id))) : 0;
     const newRow: TranscriptRow = {
       id: String(maxId + 1),
       year: "",
@@ -83,8 +81,7 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
       grade: "",
       credits: "",
     };
-    const newRows = [...rows, newRow];
-    handleRowsUpdate(newRows);
+    handleRowsUpdate([...rows, newRow]);
   };
 
   const handleDeleteRow = (id: string) => {
@@ -94,8 +91,7 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
 
   const confirmDelete = () => {
     if (rowToDelete) {
-      const newRows = rows.filter(r => r.id !== rowToDelete);
-      handleRowsUpdate(newRows);
+      handleRowsUpdate(rows.filter((r) => r.id !== rowToDelete));
     }
     setDeleteConfirmOpen(false);
     setRowToDelete(null);
@@ -105,10 +101,13 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
     handleRowsUpdate([]);
   };
 
+  const cellFontSx = { fontSize: "clamp(0.6rem, 1.5vw, 0.8rem)" };
+
   const actionColumn: GridColDef = {
     field: "actions",
-    headerName: "Actions",
-    width: 80,
+    headerName: "",
+    width: 48,
+    minWidth: 48,
     sortable: false,
     filterable: false,
     renderCell: (params) => (
@@ -116,27 +115,44 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
         <IconButton
           size="small"
           onClick={() => handleDeleteRow(params.row.id)}
-          sx={{
-            color: "#f44336",
-            "&:hover": {
-              backgroundColor: "#ffebee"
-            }
-          }}
+          sx={{ color: "#f44336", "&:hover": { backgroundColor: "#ffebee" } }}
         >
-          <DeleteIcon fontSize="small" />
+          <DeleteIcon sx={{ fontSize: "clamp(0.9rem, 2vw, 1.1rem)" }} />
         </IconButton>
       </Tooltip>
     ),
   };
 
   const columns: GridColDef[] = [
-    { field: "year", headerName: "Year", width: 80, editable: true },
-    { field: "subject", headerName: "Subject", width: 110, editable: true },
-    { field: "name", headerName: "Course Name", flex: 1, editable: true },
+    {
+      field: "year",
+      headerName: "Year",
+      flex: 0.8,
+      minWidth: 60,
+      editable: true,
+      renderCell: (params) => <span style={cellFontSx}>{params.value}</span>,
+    },
+    {
+      field: "subject",
+      headerName: "Subject",
+      flex: 1,
+      minWidth: 75,
+      editable: true,
+      renderCell: (params) => <span style={cellFontSx}>{params.value}</span>,
+    },
+    {
+      field: "name",
+      headerName: "Course Name",
+      flex: 2,
+      minWidth: 100,
+      editable: true,
+      renderCell: (params) => <span style={cellFontSx}>{params.value}</span>,
+    },
     {
       field: "grade",
       headerName: "Grade",
-      width: 90,
+      flex: 0.7,
+      minWidth: 60,
       editable: true,
       renderCell: (params) => (
         <Box
@@ -145,6 +161,7 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
             height: "100%",
             display: "flex",
             alignItems: "center",
+            ...cellFontSx,
             ...(gradeError.rowId === params.row.id && {
               border: "2px solid #f44336",
               backgroundColor: "#ffebee",
@@ -159,7 +176,8 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
     {
       field: "credits",
       headerName: "Credits",
-      width: 90,
+      flex: 0.7,
+      minWidth: 60,
       editable: true,
       renderCell: (params) => (
         <Box
@@ -168,6 +186,7 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
             height: "100%",
             display: "flex",
             alignItems: "center",
+            ...cellFontSx,
             ...(creditsError.rowId === params.row.id && {
               border: "2px solid #f44336",
               backgroundColor: "#ffebee",
@@ -184,7 +203,15 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
 
   return (
     <>
-      <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 1,
+          mb: 2,
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
         <Tooltip title="Add New Row">
           <Button
             variant="contained"
@@ -195,9 +222,8 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
               backgroundColor: "#064F1E",
               color: "#fff",
               textTransform: "none",
-              "&:hover": {
-                backgroundColor: "#053a16",
-              },
+              fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)",
+              "&:hover": { backgroundColor: "#053a16" },
             }}
           >
             Add Row
@@ -212,6 +238,7 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
             size="small"
             sx={{
               textTransform: "none",
+              fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)",
             }}
           >
             Delete All
@@ -219,7 +246,10 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
         )}
 
         {rows.length === 0 && (
-          <Typography variant="caption" sx={{ color: "#999", mt: 1 }}>
+          <Typography
+            variant="caption"
+            sx={{ color: "#999", fontSize: "clamp(0.65rem, 1.5vw, 0.75rem)" }}
+          >
             No transcript data added yet. Click "Add Row" to start.
           </Typography>
         )}
@@ -227,90 +257,113 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
 
       {gradeError.message && (
         <Box sx={{ mb: 1 }}>
-          <Alert severity="warning">{gradeError.message}</Alert>
-          {/* <Typography sx={{ color: '#fff', backgroundColor: '#f44336', borderRadius: 1, px: 2, py: 1, fontWeight: 'bold', border: '1px solid #d32f2f' }}>
+          <Alert
+            severity="warning"
+            sx={{ fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)" }}
+          >
             {gradeError.message}
-          </Typography> */}
+          </Alert>
         </Box>
       )}
 
       {creditsError.message && (
         <Box sx={{ mb: 1 }}>
-          <Alert severity="warning">{creditsError.message}</Alert>
+          <Alert
+            severity="warning"
+            sx={{ fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)" }}
+          >
+            {creditsError.message}
+          </Alert>
         </Box>
       )}
 
-      <DataGridPro
-        rows={rows}
-        columns={columns}
-        disableRowSelectionOnClick
-        rowSelection={false}
-        multipleColumnsSortingMode="always"
-        density="compact"
-        // sortingOrder={["asc", "desc"]}8
-        processRowUpdate={(newRow) => {
-          // Auto-format grades
-          if (newRow.grade) {
-            const trimmedGrade = newRow.grade.trim();
-            
-            // Format 1-5 to 1.00-5.00
-            const singleDigitPattern = /^[1-5]$/;
-            if (singleDigitPattern.test(trimmedGrade)) {
-              newRow.grade = `${trimmedGrade}.00`;
+      <Box sx={{ width: "100%", overflowX: "auto" }}>
+        <DataGridPro
+          rows={rows}
+          columns={columns}
+          disableRowSelectionOnClick
+          rowSelection={false}
+          multipleColumnsSortingMode="always"
+          density="compact"
+          processRowUpdate={(newRow) => {
+            if (newRow.grade) {
+              const trimmedGrade = newRow.grade.trim();
+              const singleDigitPattern = /^[1-5]$/;
+              if (singleDigitPattern.test(trimmedGrade)) {
+                newRow.grade = `${trimmedGrade}.00`;
+              }
+              const oneDecimalPattern = /^\d+\.\d{1}$/;
+              if (oneDecimalPattern.test(trimmedGrade)) {
+                newRow.grade = `${trimmedGrade}0`;
+              }
             }
-            
-            // Format 1.5 to 1.50 (one decimal place to two decimal places)
-            const oneDecimalPattern = /^\d+\.\d{1}$/;
-            if (oneDecimalPattern.test(trimmedGrade)) {
-              newRow.grade = `${trimmedGrade}0`;
+            if (newRow.grade && !isValidGrade(newRow.grade)) {
+              setGradeError({
+                rowId: newRow.id,
+                message: `Invalid grade format. Please check the highlighted row.`,
+              });
+              return rows.find((r) => r.id === newRow.id) || newRow;
             }
-          }
-          
-          // Validate grade if it was edited
-          if (newRow.grade && !isValidGrade(newRow.grade)) {
-            setGradeError({ rowId: newRow.id, message: `Invalid grade format. Please check the highlighted row.` });
-            return rows.find(r => r.id === newRow.id) || newRow;
-          }
-          setGradeError({ rowId: null, message: null });
+            setGradeError({ rowId: null, message: null });
+            if (newRow.credits && !isValidCredits(newRow.credits)) {
+              setCreditsError({
+                rowId: newRow.id,
+                message: `Credits must be a positive number only. No letters, special characters, or negative numbers allowed.`,
+              });
+              return rows.find((r) => r.id === newRow.id) || newRow;
+            }
+            setCreditsError({ rowId: null, message: null });
+            const newRows = rows.map((r) => (r.id === newRow.id ? newRow : r));
+            handleRowsUpdate(newRows);
+            return newRow;
+          }}
+          sx={{
+            "& .MuiDataGrid-columnHeader": {
+              borderBottom: "0.3px solid #e0e0e0",
+              backgroundColor: "#f5f5f5",
+              fontWeight: "bold",
+            },
+            "& .MuiDataGrid-columnHeaderTitle": {
+              fontSize: "clamp(0.65rem, 1.5vw, 0.8rem)",
+            },
+            "& .MuiDataGrid-cell": {
+              borderBottom: "1px solid #f0f0f0",
+              fontSize: "clamp(0.6rem, 1.5vw, 0.8rem)",
+            },
+            minHeight: 300,
+            maxHeight: 500,
+            borderRadius: 2,
+            "& .MuiDataGrid-root": { border: "none" },
+          }}
+        />
+      </Box>
 
-          // Validate credits if it was edited
-          if (newRow.credits && !isValidCredits(newRow.credits)) {
-            setCreditsError({ rowId: newRow.id, message: `Credits must be a positive number only. No letters, special characters, or negative numbers allowed.` });
-            return rows.find(r => r.id === newRow.id) || newRow;
-          }
-          setCreditsError({ rowId: null, message: null });
-          
-          const newRows = rows.map((r) => (r.id === newRow.id ? newRow : r));
-          handleRowsUpdate(newRows);
-          return newRow;
-        }}
-        sx={{
-          '& .MuiDataGrid-columnHeader': {
-            borderBottom: "0.3px solid #e0e0e0",
-            backgroundColor: '#f5f5f5',
-            fontWeight: 'bold',
-          },
-          minHeight: 300,
-          maxHeight: 500,
-          borderRadius: 2,
-          '& .MuiDataGrid-root': {
-            border: 'none',
-          },
-          '& .MuiDataGrid-cell': {
-            borderBottom: '1px solid #f0f0f0',
-          },
-        }}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Delete Row?</DialogTitle>
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+      >
+        <DialogTitle sx={{ fontSize: "clamp(0.9rem, 2.5vw, 1.1rem)" }}>
+          Delete Row?
+        </DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete this row? This action cannot be undone.</Typography>
+          <Typography sx={{ fontSize: "clamp(0.75rem, 2vw, 0.9rem)" }}>
+            Are you sure you want to delete this row? This action cannot be
+            undone.
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
+          <Button
+            onClick={() => setDeleteConfirmOpen(false)}
+            sx={{ fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            color="error"
+            variant="contained"
+            sx={{ fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)" }}
+          >
             Delete
           </Button>
         </DialogActions>

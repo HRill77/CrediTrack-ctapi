@@ -8,14 +8,22 @@ import harries from "../../assets/avatar/Harries.jpg";
 
 const DevelopersSection = () => {
   const users = [
-    { name: "Mary Lovensky", description: "Full-Stack Developer", image: mary },
     {
-      name: "Hannah Lorraine",
+      name: "Mary Lovensky Carlos",
+      description: "Documentation Specialist, Full-Stack Developer",
+      image: mary,
+    },
+    {
+      name: "Hannah Lorraine De Leon",
       description: "UI/UX Designer, Full-Stack Developer",
       image: hannah,
     },
-    { name: "Joyce Anne", description: "Full-Stack Developer", image: joyce },
-    { name: "Jelyn", description: "Full-Stack Developer", image: jelyn },
+    {
+      name: "Joyce Anne Matnao",
+      description: "QA Specialist, Full-Stack Developer",
+      image: joyce,
+    },
+    { name: "Jelyn Vidal", description: "Full-Stack Developer", image: jelyn },
     {
       name: "Harries Rill Macalatan",
       description: "Technical Mentor",

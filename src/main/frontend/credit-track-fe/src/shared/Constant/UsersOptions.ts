@@ -1,5 +1,5 @@
 export const userRoleOtions = [
-  { label: "Admin", value: "ROLE_ADMIN" },
+  //{ label: "Admin", value: "ROLE_ADMIN" },
   { label: "Program Head", value: "ROLE_PROGRAM_HEAD" },
   { label: "System Admin", value: "ROLE_SUPER_ADMIN" },
   { label: "User", value: "ROLE_USER" },
