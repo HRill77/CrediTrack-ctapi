@@ -57,6 +57,9 @@ spring:
           auth: true
           starttls:
             enable: true
+            connectiontimeout: 7200000
+          timeout: 7200000
+          writetimeout: 7200000
 
 server:
   servlet:
