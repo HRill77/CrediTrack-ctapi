@@ -28,12 +28,11 @@ public class TranscriptController {
 
     @PostMapping("/upload")
     public ResponseEntity<List<TranscriptDto>> uploadTranscript(
-            @RequestParam("file") List<MultipartFile> files,
-            @RequestParam("studentEmail") String studentEmail
+            @RequestParam("file") List<MultipartFile> files
     ) throws Exception {
 
         List<TranscriptDto> rows =
-                transcriptService.processTranscript(files, studentEmail);
+                transcriptService.processTranscript(files);
 
         return ResponseEntity.ok(rows);
     }

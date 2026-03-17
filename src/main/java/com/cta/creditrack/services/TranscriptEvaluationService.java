@@ -19,14 +19,17 @@ import com.cta.creditrack.dtos.TranscriptEvaluationGroupedResponse;
 import com.cta.creditrack.dtos.TranscriptEvaluationSearchRequest;
 
 import com.cta.creditrack.dtos.UpsertTranscriptEvaluationRequest;
+import com.cta.creditrack.dtos.UserProgramDetailsDto;
 import com.cta.creditrack.model.Approvals;
 import com.cta.creditrack.model.Curricula;
+import com.cta.creditrack.model.Program;
 import com.cta.creditrack.model.Student;
 import com.cta.creditrack.model.Transcript;
 import com.cta.creditrack.model.TranscriptEvaluation;
 import com.cta.creditrack.model.User;
 import com.cta.creditrack.repository.ApprovalsRepository;
 import com.cta.creditrack.repository.CurriculaRepository;
+import com.cta.creditrack.repository.ProgramRepository;
 import com.cta.creditrack.repository.StudentRepository;
 import com.cta.creditrack.repository.TranscriptEvaluationRepository;
 import com.cta.creditrack.repository.TranscriptRepository;
@@ -43,6 +46,7 @@ public class TranscriptEvaluationService {
     private final StudentRepository studentRepository;
     private final TranscriptRepository transcriptRepository;
     private final ApprovalsRepository approvalsRepository;
+    private final ProgramRepository programRepository;
 
     public Page<TranscriptEvaluationGroupedResponse> searchTranscriptEvaluations(
             TranscriptEvaluationSearchRequest request,
@@ -66,6 +70,9 @@ public class TranscriptEvaluationService {
                     request.fromUniversity(),
                     request.toProgram());
 
+
+            log.info("rows {}" , rows);
+           
             if (rows == null || rows.isEmpty()) {
                 return new PageImpl<>(Collections.emptyList(), pageable, 0);
             }
@@ -73,11 +80,24 @@ public class TranscriptEvaluationService {
             Map<Long, TranscriptEvaluationGroupedResponse> grouped = new LinkedHashMap<>();
 
             // Get user's program codes/names for filtering
-            Set<String> userProgramNames = user.getPrograms() != null
-                    ? user.getPrograms().stream()
-                            .map(p -> p.getName() != null ? p.getName().toUpperCase() : "")
-                            .collect(Collectors.toSet())
-                    : new HashSet<>();
+            Long ids= user.getId();
+            List<Object[]> userProgramDetailsOpt = programRepository.findProgramsByUserId(ids);
+            List<UserProgramDetailsDto> userProgramDetails = userProgramDetailsOpt.stream()
+                    .map(row -> new UserProgramDetailsDto(
+                            ((Number) row[0]).longValue(),
+                            ((Number) row[1]).longValue(),
+                            (String) row[2],
+                            (String) row[3]))
+                    .collect(Collectors.toList());
+
+
+            String userProgramNames;
+             if (!userProgramDetails.isEmpty()) {
+                userProgramNames = userProgramDetails.get(0).name().toUpperCase();
+            } else {
+                userProgramNames = "";
+            }
+            log.info("userProgramNames{}",  userProgramNames );
             log.info("User {} has access to programs: {}", user.getEmail(), userProgramNames);
             for (Object[] row : rows) {
 
@@ -90,13 +110,15 @@ public class TranscriptEvaluationService {
                     continue;
 
                 // Filter based on user's assigned programs
-                String studentToCollege = (String) row[38];
+                String studentToProgram = (String) row[37];
 
-                if (studentToCollege == null) {
+                log.info("Evaluating student {} with program {} against user programs {}", studentId, studentToProgram, userProgramNames);
+
+                if (studentToProgram == null) {
                     continue;
                 }
 
-                if (!userProgramNames.contains(studentToCollege.toUpperCase())) {
+                if (!userProgramNames.contains(studentToProgram.toUpperCase())) {
                     continue;
                 }
 
