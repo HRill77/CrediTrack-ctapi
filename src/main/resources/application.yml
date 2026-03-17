@@ -3,6 +3,9 @@ spring:
     allow-bean-definition-overriding: true
   profiles:
     active: uat #gagawin mo itong uat if may idedeploy ka ganito lang
+  mvc:
+    async:
+      request-timeout: 720000
 
   servlet:
     multipart:
