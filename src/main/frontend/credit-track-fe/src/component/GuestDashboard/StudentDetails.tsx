@@ -34,6 +34,7 @@ const labelSx = {
 const inputSx = {
   backgroundColor: "#fff",
   fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)",
+  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#064F1E" },
 };
 const helperSx = { fontSize: "clamp(0.65rem, 1.5vw, 0.75rem)" };
 

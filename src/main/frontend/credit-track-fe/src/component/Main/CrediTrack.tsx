@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { LoginInterface } from "../../shared/interface/LoginInterface";
 import NavBar from "../../shared/component/NavigationBar/NavBar";
 import {
@@ -39,6 +39,10 @@ import { SnackbarContext } from "../../shared/context/SnackbarContext";
 import { useNavigate } from "react-router-dom";
 
 const CrediTrack = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const { getCurrentUser } = useContext(AuthContext);
   const { openSnack, closeSnack, showSuccess } = useContext(SnackbarContext);
   const navigate = useNavigate();
@@ -313,7 +317,10 @@ const CrediTrack = () => {
           >
             <InputLabel
               htmlFor="institutional-email"
-              sx={{ fontSize: "clamp(0.8rem, 2.5vw, 1rem)" }}
+              sx={{
+                fontSize: "clamp(0.8rem, 2.5vw, 1rem)",
+                "&.Mui-focused": { color: "#064F1E" },
+              }}
             >
               Institutional Email
             </InputLabel>
@@ -326,7 +333,12 @@ const CrediTrack = () => {
               autoComplete="email"
               placeholder="name@wesleyan.edu.ph"
               label="Institutional Email"
-              sx={{ fontSize: "clamp(0.8rem, 2.5vw, 1rem)" }}
+              sx={{
+                fontSize: "clamp(0.8rem, 2.5vw, 1rem)",
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#064F1E",
+                },
+              }}
             />
             {errorMessage.emailError && (
               <FormHelperText sx={{ fontSize: "clamp(0.65rem, 2vw, 0.75rem)" }}>
@@ -343,7 +355,10 @@ const CrediTrack = () => {
           >
             <InputLabel
               htmlFor="outlined-adornment-password"
-              sx={{ fontSize: "clamp(0.8rem, 2.5vw, 1rem)" }}
+              sx={{
+                fontSize: "clamp(0.8rem, 2.5vw, 1rem)",
+                "&.Mui-focused": { color: "#064F1E" },
+              }}
             >
               Password
             </InputLabel>
@@ -355,7 +370,12 @@ const CrediTrack = () => {
               label="Password"
               value={login.password}
               onChange={(e) => setLogin({ ...login, password: e.target.value })}
-              sx={{ fontSize: "clamp(0.8rem, 2.5vw, 1rem)" }}
+              sx={{
+                fontSize: "clamp(0.8rem, 2.5vw, 1rem)",
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#064F1E",
+                },
+              }}
               endAdornment={
                 <InputAdornment position="end">
                   <IconButton

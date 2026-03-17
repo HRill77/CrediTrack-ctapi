@@ -5,10 +5,9 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
-import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
-import { Modal, Box, Typography, Button } from "@mui/material";
-// hindi na ito ata ginagamit
+import { Box } from "@mui/material";
+
 export const CREDIT_TRACK_COLUMNS = [
   { id: "subjectCode", label: "Subject Code", minWidth: 80 },
   { id: "courseName", label: "Course Name", minWidth: 120 },
@@ -124,7 +123,7 @@ interface Column {
   id: string;
   label: string;
   minWidth?: number;
-  align?: "right";
+  align?: "right" | "center" | "left";
   format?: (value: any) => string;
 }
 
@@ -159,11 +158,12 @@ const CrediTrackResultTable: React.FC<CrediTrackResultTableProps> = ({
                     align={column.align}
                     sx={{
                       minWidth: column.minWidth,
-                      // boxShadow: "0px 2px 2px rgba(0, 0, 0, 0.1)",
                       fontWeight: 700,
                       textAlign: "center",
                       height: "30px",
-                      padding: "13px",
+                      padding: "10px 8px",
+                      fontSize: "clamp(0.6rem, 1.5vw, 0.75rem)",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {column.label}
@@ -181,9 +181,9 @@ const CrediTrackResultTable: React.FC<CrediTrackResultTableProps> = ({
                         border: "none",
                         fontWeight: 700,
                         backgroundColor: "#ffffff",
-                        fontStyle: "normal",
                         height: "30px",
                         padding: "10px 3px 3px 3px",
+                        fontSize: "clamp(0.6rem, 1.5vw, 0.75rem)",
                       }}
                     >
                       <p style={{ paddingLeft: "1em", margin: 0 }}>
@@ -202,13 +202,6 @@ const CrediTrackResultTable: React.FC<CrediTrackResultTableProps> = ({
                         role="checkbox"
                         tabIndex={-1}
                         key={`${sectionIndex}-${rowIndex}`}
-                        sx={
-                          {
-                            // backgroundColor: isInvalid
-                            //</React.Fragment> ? "#ffcccc"
-                            //  : "transparent",
-                          }
-                        }
                       >
                         {columns.map((column: Column) => {
                           const value = row[column.id];
@@ -216,21 +209,18 @@ const CrediTrackResultTable: React.FC<CrediTrackResultTableProps> = ({
                             <TableCell
                               key={column.id}
                               align={column.align}
-                              style={{
-                                color: isInvalid ? "#cc0000" : "inherit",
-                              }}
                               sx={{
                                 border: "none",
                                 height: "30px",
-                                padding: "3px",
-                                fontSize: "13px",
+                                padding: "3px 8px",
+                                fontSize: "clamp(0.55rem, 1.4vw, 0.72rem)",
                                 color: isInvalid ? "#cc0000" : "inherit",
                               }}
                             >
                               <p
                                 style={{
-                                  paddingLeft: "2em",
-                                  paddingRight: "2em",
+                                  paddingLeft: "1em",
+                                  paddingRight: "1em",
                                   margin: 0,
                                 }}
                               >

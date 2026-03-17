@@ -6,7 +6,7 @@ import { ITranscriptRequest } from '../interface/ITranscriptRequest';
 
 class TranscriptService {
 
-    uploadTranscript(files: File | File[], studentEmail: string): Promise<AxiosResponse<TranscriptDto[]>> {
+    uploadTranscript(files: File | File[]): Promise<AxiosResponse<TranscriptDto[]>> {
         const formData = new FormData();
         
         // Handle both single and multiple files
@@ -18,7 +18,7 @@ class TranscriptService {
             formData.append('file', files);
         }
         
-        formData.append('studentEmail', studentEmail);
+       
 
         return http.post<TranscriptDto[]>("/transcripts/upload", formData, {
             headers: {

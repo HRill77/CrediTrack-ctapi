@@ -91,38 +91,17 @@ const UploadingCourses: React.FC<UploadingCoursesProps> = ({
     const pdfs = files.filter(isPdf);
     const images = files.filter(isImage);
     const others = files.filter((f) => !isImage(f) && !isPdf(f));
-    if (others.length > 0) {
-      setValidationError("Only PDF and image files (JPG, PNG) are allowed.");
+    if (pdfs.length > 0) {
+      setValidationError(
+        "PDF files are not allowed. Please upload JPG or PNG images only.",
+      );
       e.target.value = "";
       return;
     }
-    const existingFileType = getExistingFileType(uploadedFiles[fileType]);
-    if (existingFileType !== null) {
-      if (existingFileType === "pdf" && images.length > 0) {
-        setValidationError(
-          "Cannot mix PDF with images. You have already uploaded a PDF.",
-        );
-        e.target.value = "";
-        return;
-      }
-      if (existingFileType === "image" && pdfs.length > 0) {
-        setValidationError(
-          "Cannot mix images with PDF. You have already uploaded images.",
-        );
-        e.target.value = "";
-        return;
-      }
-    } else {
-      if (pdfs.length > 1) {
-        setValidationError("Only ONE PDF file is allowed.");
-        e.target.value = "";
-        return;
-      }
-      if (pdfs.length === 1 && images.length > 0) {
-        setValidationError("PDF cannot be uploaded together with images.");
-        e.target.value = "";
-        return;
-      }
+    if (others.length > 0) {
+      setValidationError("Only JPG and PNG image files are allowed.");
+      e.target.value = "";
+      return;
     }
     onFileUpload(e, fileType);
   };
@@ -146,8 +125,7 @@ const UploadingCourses: React.FC<UploadingCoursesProps> = ({
     setUploadSuccess("");
     try {
       const response = await TranscriptService.uploadTranscript(
-        uploadedFiles.transcript,
-        studentEmail,
+        uploadedFiles.transcript
       );
       if (response.data && Array.isArray(response.data)) {
         const transcriptRows: TranscriptRow[] = response.data.map(
@@ -351,7 +329,7 @@ const UploadingCourses: React.FC<UploadingCoursesProps> = ({
         mt={-2}
         sx={{ fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)" }}
       >
-        PDF (single file) or multiple JPG/PNG images
+        JPG/PNG images only
       </Typography>
 
       {validationError && (
@@ -404,7 +382,7 @@ const UploadingCourses: React.FC<UploadingCoursesProps> = ({
             <input
               hidden
               type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
+              accept=".jpg,.jpeg,.png"
               multiple
               onChange={(e) => handleValidatedUpload(e, "transcript")}
             />
@@ -469,7 +447,7 @@ const UploadingCourses: React.FC<UploadingCoursesProps> = ({
               <input
                 hidden
                 type="file"
-                accept=".pdf,.jpeg,.jpg,.png"
+                accept=".jpeg,.jpg,.png"
                 multiple
                 onChange={(e) => onFileUpload(e, modalFileType)}
               />

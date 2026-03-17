@@ -55,6 +55,7 @@ const GuestDashboard = () => {
   const [showResultModal, setShowResultModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [evaluationResult, setEvaluationResult] = useState<any[]>([]);
+  const [savedStudentId, setSavedStudentId] = useState<number | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>,
@@ -191,7 +192,10 @@ const GuestDashboard = () => {
       );
 
       if (response.status === 200 || response.status === 201) {
-        const studentId = response.data.studentId;
+        const studentId = response.data.studentId ?? response.data.id ?? null;
+        if (studentId) {
+          setSavedStudentId(Number(studentId));
+        }
         const mapTranscriptToRequest = (
           studentId: number,
           transcriptData: TranscriptRow[],
@@ -213,6 +217,10 @@ const GuestDashboard = () => {
         setEvaluationResult(evaluationResponse.data || []);
         setErrorMessage("");
         setShowResultModal(true);
+        if (!savedStudentId && response.data.studentId) {
+          setSavedStudentId(Number(response.data.studentId));
+        }
+
       } else {
         setErrorMessage(
           "Failed to save student data. Please check your inputs and try again.",
@@ -329,12 +337,13 @@ const GuestDashboard = () => {
             onClose={() => setShowResultModal(false)}
             evaluationData={evaluationResult}
             studentData={formData}
+            studentId={savedStudentId ?? undefined}
             transferData={transferData}
           />
         </Container>
       </Box>
 
-      <Box className="dashboard-footer">
+      <Box className="dashboard-footer" sx={{ textAlign: "center" }}>
         <Typography
           variant="body2"
           sx={{ fontSize: "clamp(0.65rem, 1.5vw, 0.75rem)" }}

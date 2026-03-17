@@ -51,7 +51,11 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, handleClose }) => {
     programId: "",
   });
 
+  
+
   const [errors, setErrors] = useState<Partial<UserFormData>>({});
+  console.log("formData", formData);
+  console.log("errors", errors);
   const { data: roles } = useGetAllRoles();
   const { data: programs } = useGetAllPrograms();
   const queryClient = useQueryClient();
@@ -73,6 +77,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, handleClose }) => {
     [roles],
   );
 
+  console.log("selectedRoleList", roleList.find((r: any) => r.value === formData.roleId));
+
   const programList = useMemo(
     () =>
       programs?.map((program: any) => ({
@@ -81,7 +87,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, handleClose }) => {
       })) ?? [],
     [programs],
   );
-
+  
+  
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>,
   ) => {
@@ -141,12 +148,12 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, handleClose }) => {
           email: "Email already exists",
         }));
       }
-      // else if (!formData.email.endsWith('@wesleyan.edu.ph')) {
-      //   setErrors(prev => ({
-      //     ...prev,
-      //     email: 'Please enter a valid institutional email (@wesleyan.edu.ph)'
-      //   }));
-      // }
+      else if (!formData.email.endsWith('@wesleyan.edu.ph')) {
+        setErrors(prev => ({
+          ...prev,
+          email: 'Please enter a valid institutional email (@wesleyan.edu.ph)'
+        }));
+      }
     } catch (err) {
       console.error("Email check failed", err);
     }
@@ -164,6 +171,13 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, handleClose }) => {
     //   newErrors.email = 'Please enter a valid institutional email (@wesleyan.edu.ph)';
     // }
     if (!formData.roleId) newErrors.roleId = "Role is required";
+    else {
+    // Check if selected role is Program Head, if so require program
+    const selectedRole = roleList.find((r: any) => r.value === formData.roleId);
+    if (selectedRole?.label === 'Program Head' && !formData.programId) {
+      newErrors.programId = "Program is required for Program Head role";
+    }
+  }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -212,7 +226,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, handleClose }) => {
   return (
     <div>
       <BootstrapDialog
-        onClose={handleClose}
+        onClose={handleModalClose}
         aria-labelledby="customized-dialog-title"
         open={open}
         fullWidth={true}
@@ -226,7 +240,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, handleClose }) => {
         </DialogTitle>
         <IconButton
           aria-label="close"
-          onClick={handleClose}
+          onClick={handleModalClose}
           sx={(theme) => ({
             position: "absolute",
             right: 8,

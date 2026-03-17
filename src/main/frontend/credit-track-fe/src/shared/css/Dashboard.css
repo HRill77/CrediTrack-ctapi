@@ -124,7 +124,9 @@
   .dashboard-footer {
     font-size: clamp(0.6rem, 3vw, 0.75rem);
     padding-left: 72px;
+    padding-right: 72px;
     box-sizing: border-box;
+    white-space: nowrap;
   }
 
   .dashboard-logo {

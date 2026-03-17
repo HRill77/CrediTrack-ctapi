@@ -19,7 +19,7 @@ const features = [
   },
   {
     src: creditMatching,
-    title: "AI Credit Matching",
+    title: "Automated Credit Matching",
     description:
       "Instantly matches your courses with the new university's curriculum.",
   },
