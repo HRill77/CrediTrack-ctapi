@@ -58,3 +58,11 @@ export const semesterOptions = [
   { label: "Second Semester", value: "Second Semester" },
   { label: "Third Semester", value: "Third Semester" },
 ];
+
+export const UniversityFromOptions = [
+  { label: "Nueva Ecija University of Science and Technology", value: "NEUST" },
+  { label: "Araullo University", value: "AU" },
+  { label: "Wesleyan University-Philippines", value: "WUP  " },
+  { label: "Midway Colleges", value: "MC" },
+  { label: "College of Immaculate Concepcion", value: "CIC" },
+];

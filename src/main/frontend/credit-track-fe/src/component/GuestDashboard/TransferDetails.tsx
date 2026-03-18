@@ -7,7 +7,10 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { courseOptions } from "../../shared/Constant/UsersOptions";
+import {
+  courseOptions,
+  UniversityFromOptions,
+} from "../../shared/Constant/UsersOptions";
 import { TransferData } from "../../shared/interface/TransferData";
 import { collegesList } from "../../shared/utils/programSectionUtil";
 
@@ -133,20 +136,36 @@ const TransferDetails: React.FC<TransferDetailsProps> = ({
             Transfer from:
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {/* ✅ Fixed: University field — Autocomplete with proper renderInput */}
             <FormControl fullWidth variant="outlined">
               <Typography variant="body2" sx={labelSx}>
                 University :
               </Typography>
-              <OutlinedInput
-                id="fromUniversity"
-                size="small"
-                name="fromUniversity"
-                type="text"
-                value={transferData.fromUniversity}
-                onChange={onTransferChange}
-                placeholder="Enter university name"
-                sx={{ backgroundColor: "#fff", ...inputSx }}
-                error={!!errors.fromUniversity}
+              <Autocomplete
+                freeSolo
+                options={UniversityFromOptions.map((u) => u.label)}
+                value={transferData.fromUniversity || ""}
+                onChange={(event, newValue) => {
+                  const syntheticEvent = {
+                    target: { name: "fromUniversity", value: newValue || "" },
+                  } as React.ChangeEvent<{ name?: string; value: unknown }>;
+                  onTransferChange(syntheticEvent);
+                }}
+                onInputChange={(event, newInputValue) => {
+                  const syntheticEvent = {
+                    target: { name: "fromUniversity", value: newInputValue },
+                  } as React.ChangeEvent<{ name?: string; value: unknown }>;
+                  onTransferChange(syntheticEvent);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    size="small"
+                    placeholder="Enter university name"
+                    error={!!errors.fromUniversity}
+                    InputProps={{ ...params.InputProps, sx: inputSx }}
+                  />
+                )}
               />
               {errors.fromUniversity && (
                 <Typography variant="caption" sx={errorSx}>
@@ -188,28 +207,6 @@ const TransferDetails: React.FC<TransferDetailsProps> = ({
               {errors.fromProgram && (
                 <Typography variant="caption" sx={errorSx}>
                   {errors.fromProgram}
-                </Typography>
-              )}
-            </FormControl>
-
-            <FormControl fullWidth variant="outlined">
-              <Typography variant="body2" sx={labelSx}>
-                College :
-              </Typography>
-              <OutlinedInput
-                id="fromCollege"
-                size="small"
-                name="fromCollege"
-                type="text"
-                value={transferData.fromCollege}
-                onChange={onTransferChange}
-                placeholder="Enter college department"
-                sx={{ backgroundColor: "#fff", ...inputSx }}
-                error={!!errors.fromCollege}
-              />
-              {errors.fromCollege && (
-                <Typography variant="caption" sx={errorSx}>
-                  {errors.fromCollege}
                 </Typography>
               )}
             </FormControl>
