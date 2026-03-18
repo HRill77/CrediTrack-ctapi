@@ -125,8 +125,9 @@ const UploadingCourses: React.FC<UploadingCoursesProps> = ({
     setUploadSuccess("");
     try {
       const response = await TranscriptService.uploadTranscript(
-        uploadedFiles.transcript
+        uploadedFiles.transcript,
       );
+      console.log("RAW API RESPONSE:", JSON.stringify(response.data));
       if (response.data && Array.isArray(response.data)) {
         const transcriptRows: TranscriptRow[] = response.data.map(
           (dto: TranscriptDto, index: number) => ({

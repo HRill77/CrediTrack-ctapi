@@ -2,7 +2,7 @@ spring:
   main:
     allow-bean-definition-overriding: true
   profiles:
-    active: uat #gagawin mo itong uat if may idedeploy ka ganito lang
+    active: dev, local #gagawin mo itong uat if may idedeploy ka ganito lang
   mvc:
     async:
       request-timeout: 720000
@@ -67,6 +67,10 @@ sendgrid:
   from:
     email: inquiry.creditrack@gmail.com
 
+google:
+  gemini:
+    api-key: ${GEMINI_API_KEY}
+
 server:
   servlet:
     session:
@@ -98,6 +102,6 @@ logging:
   file:
     name: logs/app.log
 
-google:
-  vision:
-    api-key: "AIzaSyCi4l-9x5KhtKXr7839nC4rYg-RdrKzy8I"
+#google:
+# vision:
+# api-key: "AIzaSyCi4l-9x5KhtKXr7839nC4rYg-RdrKzy8I"

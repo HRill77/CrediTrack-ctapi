@@ -65,22 +65,40 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
     "Failed grade",
     "Course mismatch",
     "Courses mismatch",
+    "Low similarity",
   ];
 
   const transformEvaluationData = (evalData: any[]): Section[] => {
     if (!evalData || evalData.length === 0) return CREDIT_TRACK_DATA;
+
+    const curriculaYearToAcademicYear: Record<string, string> = {};
+    evalData.forEach((item) => {
+      if (item.transcript?.year && item.curricula?.year) {
+        curriculaYearToAcademicYear[item.curricula.year] = item.transcript.year;
+      }
+    });
 
     const grouped: Record<string, Section> = {};
 
     evalData.forEach((item) => {
       if (!item.curricula) return;
 
-      const key = `${item.curricula.year}|${item.curricula.semester}`;
+      // ✅ Skip Summer semester entries
+      const semesterRaw = item.curricula.semester || "";
+      if (semesterRaw.toLowerCase().includes("summer")) return;
+
+      const academicYear =
+        item.transcript?.year ||
+        curriculaYearToAcademicYear[item.curricula.year] ||
+        item.curricula.year;
+
+      const semester = semesterRaw;
+      const key = `${academicYear}|${semester}`;
 
       if (!grouped[key]) {
         grouped[key] = {
-          year: item.curricula.year,
-          semester: item.curricula.semester,
+          year: academicYear,
+          semester,
           courses: [],
         };
       }
@@ -100,23 +118,18 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
     });
 
     const sortedData = Object.values(grouped).sort((a: any, b: any) => {
-      const yearOrder: any = { First: 1, Second: 2, Third: 3, Fourth: 4 };
       const semesterOrder: any = { First: 1, Second: 2 };
-
-      const yearA = yearOrder[a.year.split(" ")[0]] || 0;
-      const yearB = yearOrder[b.year.split(" ")[0]] || 0;
-
+      const yearA = parseInt(a.year?.split("-")[0]) || 9999;
+      const yearB = parseInt(b.year?.split("-")[0]) || 9999;
       if (yearA !== yearB) return yearA - yearB;
-
       return (
-        (semesterOrder[a.semester.split(" ")[0]] || 0) -
-        (semesterOrder[b.semester.split(" ")[0]] || 0)
+        (semesterOrder[a.semester?.split(" ")[0]] || 0) -
+        (semesterOrder[b.semester?.split(" ")[0]] || 0)
       );
     });
 
     return sortedData;
   };
-
   const displayData: Section[] =
     evaluationData.length > 0
       ? transformEvaluationData(evaluationData)
@@ -170,93 +183,6 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
     "success",
   );
-
-  // const handleSendForApproval = async () => {
-  //   const isGuest = sessionStorage.getItem("isGuest") === "true";
-
-  //   const guestPayload = {
-  //     id: studentId || Date.now(),
-  //     studentName:
-  //       `${studentData?.lastname || ""}, ${studentData?.firstname || ""}`.trim(),
-  //     studentEmail: studentData?.email || "",
-  //     fromUniversity: transferData?.fromUniversity || "",
-  //     fromProgram: transferData?.fromProgram || "",
-  //     toProgram: transferData?.toProgram || "",
-  //     toUniversity:
-  //       transferData?.toUniversity || "Wesleyan University - Philippines",
-  //     createdAt: new Date().toISOString(),
-  //     evaluations: displayData.flatMap((section) =>
-  //       section.courses.map((course) => ({
-  //         subjectCode: course.subjectCode,
-  //         courseName: course.courseName,
-  //         units: course.units,
-  //         creditedUnits: course.creditedUnits,
-  //         grade: course.grade,
-  //         remarks: course.remarks,
-  //         confidenceScore: course.confidenceScore,
-  //       })),
-  //     ),
-  //   };
-
-  //   if (isGuest) {
-  //     const existing = JSON.parse(
-  //       localStorage.getItem("guest_approval_queue") || "[]",
-  //     );
-  //     localStorage.setItem(
-  //       "guest_approval_queue",
-  //       JSON.stringify([...existing, guestPayload]),
-  //     );
-  //     setSnackbarMessage(
-  //       "CrediTrack result added to guest approval queue for program head.",
-  //     );
-  //     setSnackbarSeverity("success");
-  //     setSnackbarOpen(true);
-  //     return;
-  //   }
-
-  //   if (!studentId) {
-  //     setSnackbarMessage("Unable to send for approval: missing student ID.");
-  //     setSnackbarSeverity("error");
-  //     setSnackbarOpen(true);
-  //     return;
-  //   }
-
-  //   try {
-  //     const payload = {
-  //       studentId,
-  //       toProgram: transferData?.toProgram,
-  //       fromProgram: transferData?.fromProgram,
-  //       evaluations: displayData.flatMap((section) =>
-  //         section.courses.map((course) => ({
-  //           evaluationId: null,
-  //           transcriptId: null,
-  //           courseName: course.courseName,
-  //           subjectCode: course.subjectCode,
-  //           units: course.units,
-  //           grade: course.grade,
-  //           curriculaId: null,
-  //           remarks: course.remarks,
-  //           confidenceScore: course.confidenceScore,
-  //           finalApproved: course.creditedUnits > 0,
-  //           deleted: false,
-  //         })),
-  //       ),
-  //     };
-  //     console.debug("Send for approval payload:", payload);
-  //     await TranscriptEvaluationService.upsertEvaluations(payload);
-
-  //     setSnackbarMessage("CrediTrack result sent for approval successfully.");
-  //     setSnackbarSeverity("success");
-  //     setSnackbarOpen(true);
-  //   } catch (error: any) {
-  //     console.error("Send for approval failed:", error);
-  //     setSnackbarMessage(
-  //       error?.response?.data?.message || "Failed to send for approval.",
-  //     );
-  //     setSnackbarSeverity("error");
-  //     setSnackbarOpen(true);
-  //   }
-  // };
 
   const graduationYear = calculateGraduationYear();
 
@@ -476,18 +402,6 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
             >
               Download PDF
             </Button>
-            {/* <Button
-              variant="contained"
-              onClick={handleSendForApproval}
-              sx={{
-                backgroundColor: "#1e5c2f",
-                fontSize: "clamp(0.65rem, 1.8vw, 0.8rem)",
-                textTransform: "none",
-                "&:hover": { backgroundColor: "#164422" },
-              }}
-            >
-              Send for Approval
-            </Button> */}
             <Button
               variant="outlined"
               onClick={onClose}
