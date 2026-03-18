@@ -136,7 +136,7 @@ const TransferDetails: React.FC<TransferDetailsProps> = ({
             Transfer from:
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {/* ✅ Fixed: University field — Autocomplete with proper renderInput */}
+            {/* University */}
             <FormControl fullWidth variant="outlined">
               <Typography variant="body2" sx={labelSx}>
                 University :
@@ -174,6 +174,7 @@ const TransferDetails: React.FC<TransferDetailsProps> = ({
               )}
             </FormControl>
 
+            {/* Program */}
             <FormControl fullWidth>
               <Typography variant="body2" sx={labelSx}>
                 Program :
@@ -210,10 +211,31 @@ const TransferDetails: React.FC<TransferDetailsProps> = ({
                 </Typography>
               )}
             </FormControl>
+
+            {/* College */}
+            <FormControl fullWidth>
+              <Typography variant="body2" sx={labelSx}>
+                College :
+              </Typography>
+              <TextField
+                size="small"
+                name="fromCollege"
+                placeholder="Enter college department"
+                value={transferData.fromCollege || ""}
+                onChange={onTransferChange}
+                error={!!errors.fromCollege}
+                InputProps={{ sx: inputSx }}
+              />
+              {errors.fromCollege && (
+                <Typography variant="caption" sx={errorSx}>
+                  {errors.fromCollege}
+                </Typography>
+              )}
+            </FormControl>
           </Box>
         </Box>
 
-        {/* Vertical Divider – hidden on mobile */}
+        {/* Vertical Divider */}
         <Box
           sx={{
             width: "2px",
@@ -237,6 +259,7 @@ const TransferDetails: React.FC<TransferDetailsProps> = ({
             Transfer to:
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {/* University */}
             <FormControl fullWidth variant="outlined">
               <Typography variant="body2" sx={labelSx}>
                 University :
@@ -253,6 +276,7 @@ const TransferDetails: React.FC<TransferDetailsProps> = ({
               />
             </FormControl>
 
+            {/* Program */}
             <FormControl fullWidth>
               <Typography variant="body2" sx={labelSx}>
                 Program :
@@ -285,6 +309,7 @@ const TransferDetails: React.FC<TransferDetailsProps> = ({
               )}
             </FormControl>
 
+            {/* College (auto-filled) */}
             <FormControl fullWidth variant="outlined">
               <Typography variant="body2" sx={labelSx}>
                 College :
