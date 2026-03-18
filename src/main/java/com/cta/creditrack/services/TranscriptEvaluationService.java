@@ -70,9 +70,8 @@ public class TranscriptEvaluationService {
                     request.fromUniversity(),
                     request.toProgram());
 
+            log.info("rows {}", rows);
 
-            log.info("rows {}" , rows);
-           
             if (rows == null || rows.isEmpty()) {
                 return new PageImpl<>(Collections.emptyList(), pageable, 0);
             }
@@ -80,7 +79,7 @@ public class TranscriptEvaluationService {
             Map<Long, TranscriptEvaluationGroupedResponse> grouped = new LinkedHashMap<>();
 
             // Get user's program codes/names for filtering
-            Long ids= user.getId();
+            Long ids = user.getId();
             List<Object[]> userProgramDetailsOpt = programRepository.findProgramsByUserId(ids);
             List<UserProgramDetailsDto> userProgramDetails = userProgramDetailsOpt.stream()
                     .map(row -> new UserProgramDetailsDto(
@@ -90,14 +89,13 @@ public class TranscriptEvaluationService {
                             (String) row[3]))
                     .collect(Collectors.toList());
 
-
             String userProgramNames;
-             if (!userProgramDetails.isEmpty()) {
+            if (!userProgramDetails.isEmpty()) {
                 userProgramNames = userProgramDetails.get(0).name().toUpperCase();
             } else {
                 userProgramNames = "";
             }
-            log.info("userProgramNames{}",  userProgramNames );
+            log.info("userProgramNames{}", userProgramNames);
             log.info("User {} has access to programs: {}", user.getEmail(), userProgramNames);
             for (Object[] row : rows) {
 
@@ -112,7 +110,8 @@ public class TranscriptEvaluationService {
                 // Filter based on user's assigned programs
                 String studentToProgram = (String) row[37];
 
-                log.info("Evaluating student {} with program {} against user programs {}", studentId, studentToProgram, userProgramNames);
+                log.info("Evaluating student {} with program {} against user programs {}", studentId, studentToProgram,
+                        userProgramNames);
 
                 if (studentToProgram == null) {
                     continue;
@@ -324,21 +323,19 @@ public class TranscriptEvaluationService {
         return null;
     }
 
-    public TranscriptEvaluationGroupedResponse
-getEvaluationByStudentId(Long studentId, User user) {
+    public TranscriptEvaluationGroupedResponse getEvaluationByStudentId(Long studentId, User user) {
 
-    TranscriptEvaluationSearchRequest req =
-            new TranscriptEvaluationSearchRequest(null,null,null,null,null,null);
+        TranscriptEvaluationSearchRequest req = new TranscriptEvaluationSearchRequest(null, null, null, null, null,
+                null);
 
-    Page<TranscriptEvaluationGroupedResponse> page =
-            searchTranscriptEvaluations(req,
-                    PageRequest.of(0,100),
-                    user);
+        Page<TranscriptEvaluationGroupedResponse> page = searchTranscriptEvaluations(req,
+                PageRequest.of(0, 100),
+                user);
 
-    return page.getContent().stream()
-            .filter(r -> r.studentId().equals(studentId))
-            .findFirst()
-            .orElseThrow();
-}
+        return page.getContent().stream()
+                .filter(r -> r.studentId().equals(studentId))
+                .findFirst()
+                .orElseThrow();
+    }
 
 }
