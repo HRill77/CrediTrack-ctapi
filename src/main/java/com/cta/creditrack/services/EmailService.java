@@ -1,48 +1,49 @@
 package com.cta.creditrack.services;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.cta.creditrack.dtos.EmailRequest;
 import com.cta.creditrack.model.User;
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.Response;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Attachments;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
+import com.sendgrid.helpers.mail.objects.Personalization;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
 public class EmailService {
 
-  @Autowired
-  private JavaMailSender mailSender;
-  @Autowired
-  private PdfGeneratorService pdfGeneratorService;
-  @Autowired
-  private TranscriptEvaluationService transcriptEvaluationService;
+  @Value("${sendgrid.api.key}")
+  private String apiKey;
+
+  @Value("${sendgrid.from.email}")
+  private String fromEmail;
+
+  private final PdfGeneratorService pdfGeneratorService;
+  private final TranscriptEvaluationService transcriptEvaluationService;
+
+  public EmailService(PdfGeneratorService pdfGeneratorService,
+      TranscriptEvaluationService transcriptEvaluationService) {
+    this.pdfGeneratorService = pdfGeneratorService;
+    this.transcriptEvaluationService = transcriptEvaluationService;
+  }
 
   public void sendEmail(EmailRequest emailRequest) {
-    try {
-      MimeMessage mimeMessage = mailSender.createMimeMessage();
-      MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-      helper.setFrom("fromemail@gmail.com");
-      helper.setTo(emailRequest.recipientEmail());
-      helper.setSubject(emailRequest.subject());
-
-      // prefer explicit HTML if provided
-      String content = emailRequest.html() != null ? emailRequest.html() : emailRequest.body();
-      helper.setText(content, true); // always send as HTML
-
-      mailSender.send(mimeMessage);
-      log.info("Mail sent to {}", emailRequest.recipientEmail());
-    } catch (MessagingException e) {
-      log.error("Error sending email: {}", e.getMessage(), e);
-    }
+    String html = emailRequest.html() != null ? emailRequest.html() : emailRequest.body();
+    sendViaSendGrid(emailRequest.recipientEmail(), emailRequest.subject(), html, null);
+    log.info("Mail sent to {}", emailRequest.recipientEmail());
   }
 
   public void sendTemporaryPasswordEmail(String toEmail, String tempPassword) {
@@ -110,36 +111,64 @@ public class EmailService {
 
     String emailBody = buildEmailBody(studentIds, sender);
 
+    List<Attachments> attachments = new java.util.ArrayList<>();
+    for (Long studentId : studentIds) {
+      try {
+        byte[] pdf = pdfGeneratorService.generateEvaluationPdf(studentId, sender);
+        var studentData = transcriptEvaluationService.getEvaluationByStudentId(studentId, sender);
+        String studentName = studentData.lastName() + ", " + studentData.firstName();
+        String toProgram = studentData.toProgram() != null ? studentData.toProgram() : "Unknown";
+        String filename = studentName + " - " + toProgram + ".pdf";
+
+        Attachments attachment = new Attachments();
+        attachment.setContent(Base64.getEncoder().encodeToString(pdf));
+        attachment.setType("application/pdf");
+        attachment.setFilename(filename);
+        attachment.setDisposition("attachment");
+        attachments.add(attachment);
+      } catch (Exception e) {
+        log.error("Error generating PDF for student ID: {}", studentId, e);
+        throw new RuntimeException("PDF generation failed for student: " + studentId, e);
+      }
+    }
+
+    sendViaSendGrid(recipientEmail, "CrediTrack Evaluation Results", emailBody, attachments);
+    log.info("Evaluation email sent successfully to: {}", recipientEmail);
+  }
+
+  private void sendViaSendGrid(String to, String subject, String html, List<Attachments> attachments) {
     try {
-      MimeMessage message = mailSender.createMimeMessage();
-      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+      Mail mail = new Mail();
+      mail.setFrom(new Email(fromEmail));
+      mail.setSubject(subject);
 
-      helper.setFrom(sender.getEmail());
-      helper.setTo(recipientEmail);
-      helper.setSubject("CrediTrack Evaluation Results");
-      helper.setText(emailBody, true);
+      Personalization personalization = new Personalization();
+      personalization.addTo(new Email(to));
+      mail.addPersonalization(personalization);
 
-      // Attach multiple PDFs
-      for (Long studentId : studentIds) {
-        try {
-          byte[] pdf = pdfGeneratorService.generateEvaluationPdf(studentId, sender);
+      mail.addContent(new Content("text/html", html));
 
-          var studentData = transcriptEvaluationService.getEvaluationByStudentId(studentId, sender);
-          String studentName = studentData.lastName() + ", " + studentData.firstName();
-          String toProgram = studentData.toProgram() != null ? studentData.toProgram() : "Unknown";
-          String filename = studentName + " - " + toProgram + ".pdf";
-
-          helper.addAttachment(filename, new ByteArrayResource(pdf));
-        } catch (Exception e) {
-          log.error("Error generating PDF for student ID: {}", studentId, e);
-          throw e;
+      if (attachments != null) {
+        for (Attachments attachment : attachments) {
+          mail.addAttachments(attachment);
         }
       }
 
-      mailSender.send(message);
-      log.info("Evaluation email sent successfully to: {}", recipientEmail);
-    } catch (Exception e) {
-      log.error("Failed to send evaluation email to: {}", recipientEmail, e);
+      Request request = new Request();
+      request.setMethod(Method.POST);
+      request.setEndpoint("mail/send");
+      request.setBody(mail.build());
+
+      SendGrid sg = new SendGrid(apiKey);
+      Response response = sg.api(request);
+      log.info("SendGrid response: {} to {}", response.getStatusCode(), to);
+
+      if (response.getStatusCode() >= 400) {
+        log.error("SendGrid error body: {}", response.getBody());
+        throw new RuntimeException("SendGrid failed with status: " + response.getStatusCode());
+      }
+    } catch (IOException e) {
+      log.error("Error sending email via SendGrid: {}", e.getMessage(), e);
       throw new RuntimeException("Failed to send email: " + e.getMessage(), e);
     }
   }
@@ -219,5 +248,4 @@ public class EmailService {
          """
         .formatted(studentList.toString());
   }
-
 }

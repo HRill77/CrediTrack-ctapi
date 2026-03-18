@@ -46,20 +46,26 @@ spring:
 
   #   thymeleaf:
   #    prefix: file:///${user.dir}//target//classes//static/
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: inquiry.creditrack@gmail.com
-    password: bubvjempkfkoowjr
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            connectiontimeout: 7200000
-          timeout: 7200000
-          writetimeout: 7200000
+  #mail:
+  # host: smtp.gmail.com
+  # port: 587
+  # username: inquiry.creditrack@gmail.com
+  # password: bubvjempkfkoowjr
+  # properties:
+  #mail:
+  # smtp:
+  # auth: true
+  #  starttls:
+  #   enable: true
+  #    connectiontimeout: 7200000
+  #  timeout: 7200000
+  #   writetimeout: 7200000
+
+sendgrid:
+  api:
+    key: ${SENDGRID_API_KEY}
+  from:
+    email: inquiry.creditrack@gmail.com
 
 server:
   servlet:
