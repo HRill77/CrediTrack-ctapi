@@ -250,7 +250,7 @@ const CrediTrack = () => {
             }}
             onClick={handleSignInAsGuest}
           >
-            Sign in as Student Transferee (GUEST)
+            Sign in as Student Transferee (Guest)
           </SecondaryButton>
 
           <Typography
