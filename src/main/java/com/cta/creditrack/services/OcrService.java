@@ -1,7 +1,6 @@
 package com.cta.creditrack.services;
 
 import com.cta.creditrack.dtos.VisionWordDto;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -20,90 +19,114 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OcrService {
 
-    @Value("${google.vision.api-key}")
+    @Value("${google.gemini.api-key}")
     private String apiKey;
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public List<VisionWordDto> extractWords(File file) throws Exception {
 
         byte[] bytes = Files.readAllBytes(file.toPath());
         String base64 = Base64.getEncoder().encodeToString(bytes);
 
-        String url =
-                "https://vision.googleapis.com/v1/images:annotate?key=" + apiKey;
+        String mimeType = detectMimeType(file.getName());
+
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
+                + apiKey;
 
         String requestJson = """
-        {
-          "requests": [
-            {
-              "image": { "content": "%s" },
-              "features": [
-                { "type": "DOCUMENT_TEXT_DETECTION" }
-              ]
-            }
-          ]
-        }
-        """.formatted(base64);
+                {
+                  "contents": [
+                    {
+                      "parts": [
+                        {
+                          "inline_data": {
+                            "mime_type": "%s",
+                            "data": "%s"
+                          }
+                        },
+                        {
+                          "text": "Extract every word from this document image exactly as it appears. Return ONLY a valid JSON array, no explanation, no markdown. Each object must have: \\"text\\" (the word), \\"x\\" (top-left x coordinate in pixels), \\"y\\" (top-left y coordinate in pixels). If coordinates are not determinable, use 0. Example: [{\\"text\\": \\"John\\", \\"x\\": 120, \\"y\\": 45}]"
+                        }
+                      ]
+                    }
+                  ],
+                  "generationConfig": {
+                    "temperature": 0,
+                    "responseMimeType": "application/json"
+                  }
+                }
+                """
+                .formatted(mimeType, base64);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<String> entity = new HttpEntity<>(requestJson, headers);
 
-        String response =
-                restTemplate.postForObject(url, entity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
 
-        return parseVisionResponse(response);
+        System.out.println("RAW RESPONSE: " + response.getBody());
+
+        return parseGeminiResponse(response.getBody());
     }
 
-    private List<VisionWordDto> parseVisionResponse(String json) {
+    private List<VisionWordDto> parseGeminiResponse(String json) {
 
         List<VisionWordDto> words = new ArrayList<>();
 
         try {
-            ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(json);
 
-            JsonNode pages = root
-                    .path("responses")
+            String content = root
+                    .path("candidates")
                     .get(0)
-                    .path("fullTextAnnotation")
-                    .path("pages");
+                    .path("content")
+                    .path("parts")
+                    .get(0)
+                    .path("text")
+                    .asText();
 
-            for (JsonNode page : pages) {
-                for (JsonNode block : page.path("blocks")) {
-                    for (JsonNode para : block.path("paragraphs")) {
-                        for (JsonNode word : para.path("words")) {
+            System.out.println("EXTRACTED CONTENT: " + content);
 
-                            StringBuilder text = new StringBuilder();
+            // Strip markdown fences just in case
+            String clean = content
+                    .replaceAll("(?s)```json", "")
+                    .replaceAll("```", "")
+                    .trim();
 
-                            for (JsonNode symbol : word.path("symbols")) {
-                                text.append(symbol.path("text").asText());
-                            }
+            JsonNode wordArray = mapper.readTree(clean);
 
-                            int x = word.path("boundingBox")
-                                    .path("vertices")
-                                    .get(0)
-                                    .path("x")
-                                    .asInt();
+            for (JsonNode wordNode : wordArray) {
+                String text = wordNode.path("text").asText();
+                int x = wordNode.path("x").asInt(0);
+                int y = wordNode.path("y").asInt(0);
 
-                            int y = word.path("boundingBox")
-                                    .path("vertices")
-                                    .get(0)
-                                    .path("y")
-                                    .asInt();
-
-                            words.add(new VisionWordDto(text.toString(), x, y));
-                        }
-                    }
+                if (!text.isBlank()) {
+                    words.add(new VisionWordDto(text, x, y));
                 }
             }
 
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         return words;
+    }
+
+    private String detectMimeType(String fileName) {
+        String lower = fileName.toLowerCase();
+        if (lower.endsWith(".pdf"))
+            return "application/pdf";
+        if (lower.endsWith(".png"))
+            return "image/png";
+        if (lower.endsWith(".webp"))
+            return "image/webp";
+        if (lower.endsWith(".heic"))
+            return "image/heic";
+        if (lower.endsWith(".heif"))
+            return "image/heif";
+        return "image/jpeg";
     }
 }

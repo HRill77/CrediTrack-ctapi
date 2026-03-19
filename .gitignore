@@ -39,3 +39,5 @@ src/main/resources/application-dev.yml
 
 ### Logs###
 app.log
+
+application-local.yml

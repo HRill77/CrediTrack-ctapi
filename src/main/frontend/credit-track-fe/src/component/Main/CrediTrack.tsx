@@ -111,7 +111,8 @@ const CrediTrack = () => {
       }
       await AuthService.login(email, password);
       await getCurrentUser();
-      showSuccess("Login successful!");
+      navigate("/dashboard");
+      //showSuccess("Login successful!");
       handleAdminClose();
     } catch (error: any) {
       if (error.response?.status === 401 || error.response?.status === 403) {
@@ -145,7 +146,7 @@ const CrediTrack = () => {
         handleOpenModal={handleClickOpen}
       />
       <div ref={mainRef}>
-        <Main />
+        <Main onAccessCrediTrack={handleClickOpen} />
       </div>
       <div ref={aboutRef} style={{ scrollMarginTop: "70px" }}>
         <About />
@@ -249,7 +250,7 @@ const CrediTrack = () => {
             }}
             onClick={handleSignInAsGuest}
           >
-            Sign in as Guest
+            Sign in as Student Transferee (Guest)
           </SecondaryButton>
 
           <Typography

@@ -2,7 +2,11 @@ import React from "react";
 import "../../shared/css/Main.css";
 import { Button, Container, Typography } from "@mui/material";
 
-const Main = () => {
+interface MainProps {
+  onAccessCrediTrack?: () => void;
+}
+
+const Main = ({ onAccessCrediTrack }: MainProps) => {
   return (
     <div className="hero">
       <Container maxWidth="lg">
@@ -28,6 +32,7 @@ const Main = () => {
             <Button
               className="hero-btn"
               sx={{ fontSize: "clamp(0.75rem, 2.5vw, 1rem)" }}
+              onClick={onAccessCrediTrack}
             >
               Track your course
             </Button>

@@ -195,7 +195,9 @@ const CrediTrackResultTable: React.FC<CrediTrackResultTableProps> = ({
                     const isInvalid =
                       row.remarks === "Insufficient units" ||
                       row.remarks === "Failed grade" ||
-                      row.remarks === "Course mismatch";
+                      row.remarks === "Course mismatch" ||
+                      row.remarks === "Courses mismatch" ||
+                      row.remarks === "Low similarity";
                     return (
                       <TableRow
                         hover

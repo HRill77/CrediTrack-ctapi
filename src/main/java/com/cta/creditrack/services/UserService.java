@@ -86,9 +86,13 @@ public class UserService {
                             updatedAtStr = ((LocalDateTime) row[9]).format(dateFormatter);
                         }
 
+                        String middleInitial = (row[2] != null && !((String) row[2]).isEmpty())
+                                ? String.valueOf(((String) row[2]).charAt(0))
+                                : "";
+
                         return new UserSearchResult(
                                 (Long) row[0], // id
-                                String.format("%s, %s %s", row[3], row[1], ((String) row[2]).charAt(0)), // fullName
+                                String.format("%s, %s %s", row[3], row[1], middleInitial).trim(), // fullName
                                 (String) row[4], // email
                                 (Boolean) row[5], // is_active
                                 (String) row[6], // program
@@ -657,12 +661,12 @@ public class UserService {
             }
 
             user.setUpdatedAt(Instant.now());
-            
+
             // Ensure password_set_at is not null
             if (user.getPasswordSetAt() == null) {
                 user.setPasswordSetAt(Instant.now());
             }
-            
+
             userRepository.save(user);
             log.info("Profile updated successfully for user: {}", email);
 
