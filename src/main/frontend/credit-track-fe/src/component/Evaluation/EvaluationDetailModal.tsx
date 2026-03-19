@@ -42,7 +42,7 @@ const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
     onSave,
 }) => {
     const queryClient = useQueryClient();
-    console.log("EvaluationDetailModal rendered with studentInfo:", studentInfo, "evaluations:", evaluations);
+    // console.log("EvaluationDetailModal rendered with studentInfo:", studentInfo, "evaluations:", evaluations);
 
     const [originalRows, setOriginalRows] = useState<any[]>([]);
     const [editableRows, setEditableRows] = useState<any[]>(evaluations);
@@ -55,7 +55,7 @@ const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
         transcript: [],
         courseDescription: [],
     });
-    console.log("Uploaded Files State:", uploadedFiles);
+    // console.log("Uploaded Files State:", uploadedFiles);
     const [viewerFiles, setViewerFiles] = useState<File[]>([]);
     const [viewerOpen, setViewerOpen] = useState(false);
     const [loadingFiles, setLoadingFiles] = useState(false);
@@ -90,15 +90,15 @@ const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
     // Load files from service
     useEffect(() => {
         const loadFiles = async () => {
-            console.log("loadFiles triggered - studentInfo:", studentInfo, "open:", open);
+            // console.log("loadFiles triggered - studentInfo:", studentInfo, "open:", open);
 
             if (!open) {
-                console.log("Modal not open, skipping file load");
+                // console.log("Modal not open, skipping file load");
                 return;
             }
 
             if (!studentInfo?.studentId) {
-                console.log("No studentId found, skipping file load");
+                // console.log("No studentId found, skipping file load");
                 return;
             }
 
@@ -106,22 +106,22 @@ const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
             setFileError("");
 
             try {
-                console.log("Fetching files for studentId:", studentInfo?.studentId);
+                // console.log("Fetching files for studentId:", studentInfo?.studentId);
                 const response = await FileUploadService.getFilesByStudentId(studentInfo?.studentId);
-                console.log("Files response:", response);
-                console.log("Files response data:", response.data);
+                // console.log("Files response:", response);
+                // console.log("Files response data:", response.data);
 
                 // Handle both possible response structures
                 const filesData = Array.isArray(response.data?.files)
                     ? response.data.files
                     : [];
-                console.log("Processed filesData:", filesData, "Length:", filesData?.length);
+                // console.log("Processed filesData:", filesData, "Length:", filesData?.length);
 
                 const transcriptFiles: File[] = [];
                 const courseDescriptionFiles: File[] = [];
 
                 filesData.forEach((fileRecord: any) => {
-                    console.log("Processing file record:", fileRecord);
+                    // console.log("Processing file record:", fileRecord);
 
                     // === TRANSCRIPT FILE ===
                     if (fileRecord.torFileData && fileRecord.torFilename) {
@@ -171,10 +171,10 @@ const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
                     transcript: transcriptFiles,
                     courseDescription: courseDescriptionFiles,
                 });
-                console.log("Uploaded files set:", {
-                    transcript: transcriptFiles.length,
-                    courseDescription: courseDescriptionFiles.length,
-                });
+                // console.log("Uploaded files set:", {
+                //     transcript: transcriptFiles.length,
+                //     courseDescription: courseDescriptionFiles.length,
+                // });
 
             } catch (error: any) {
                 const errorMsg =
@@ -184,7 +184,7 @@ const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
                 console.error("File loading error:", error);
                 setFileError(errorMsg);
             } finally {
-                console.log("File loading completed");
+                // console.log("File loading completed");
                 setLoadingFiles(false);
             }
         };
@@ -212,7 +212,7 @@ const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
 
                 setCurriculaList(cleanedList);
             } catch (error) {
-                console.error("Error fetching curricula:", error);
+                // console.error("Error fetching curricula:", error);
                 setCurriculaList([]);
             } finally {
                 setLoadingCurricula(false);
@@ -347,7 +347,7 @@ const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
             setSnackbarMessage(errorMsg);
             setSnackbarSeverity("error");
             setSnackbarOpen(true);
-            console.error("Update failed:", error);
+            console.error("Update failed:", error); 
         } finally {
             setIsSaving(false);
         }
@@ -358,20 +358,20 @@ const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
     };
 
     // Check if there are any changes
-    const hasChanges = () => {
-        if (originalRows.length !== editableRows.length) return true;
+    // const hasChanges = () => {
+    //     if (originalRows.length !== editableRows.length) return true;
 
-        return editableRows.some((row, index) => {
-            const original = originalRows[index];
-            if (!original) return true;
+    //     return editableRows.some((row, index) => {
+    //         const original = originalRows[index];
+    //         if (!original) return true;
 
-            return (
-                row.curricula?.id !== original.curricula?.id ||
-                row.remarks !== original.remarks ||
-                row.isEdited !== original.isEdited
-            );
-        });
-    };
+    //         return (
+    //             row.curricula?.id !== original.curricula?.id ||
+    //             row.remarks !== original.remarks ||
+    //             row.isEdited !== original.isEdited
+    //         );
+    //     });
+    // };
 
     // Handle cell edits
     const handleProcessRowUpdate = (newRow: any) => {
@@ -790,7 +790,7 @@ const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
                                     disableRowSelectionOnClick
                                     processRowUpdate={handleProcessRowUpdate}
                                     onProcessRowUpdateError={(error) => {
-                                        console.error("Row update error:", error);
+                                        // console.error("Row update error:", error);
                                     }}
                                     initialState={{
                                         pinnedColumns: {

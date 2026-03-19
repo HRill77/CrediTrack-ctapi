@@ -20,7 +20,7 @@ class TranscriptService {
         
        
 
-        return http.post<TranscriptDto[]>("/transcripts/upload", formData, {
+        return http.post<TranscriptDto[]>("/transcripts/upload2", formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }

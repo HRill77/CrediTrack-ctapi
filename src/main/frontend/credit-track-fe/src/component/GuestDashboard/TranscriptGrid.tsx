@@ -105,9 +105,10 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
 
   const actionColumn: GridColDef = {
     field: "actions",
-    headerName: "",
-    width: 48,
-    minWidth: 48,
+    headerName: "Actions",
+    width: 80,
+    headerAlign: "center",
+    align: "center",
     sortable: false,
     filterable: false,
     renderCell: (params) => (
@@ -128,7 +129,7 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
       field: "year",
       headerName: "Year",
       flex: 0.8,
-      minWidth: 60,
+      minWidth: 90,
       editable: true,
       renderCell: (params) => <span style={cellFontSx}>{params.value}</span>,
     },
@@ -144,7 +145,7 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
       field: "name",
       headerName: "Course Name",
       flex: 2,
-      minWidth: 100,
+      minWidth: 120,
       editable: true,
       renderCell: (params) => <span style={cellFontSx}>{params.value}</span>,
     },
@@ -153,6 +154,8 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
       headerName: "Grade",
       flex: 0.7,
       minWidth: 60,
+      headerAlign: "center",
+      align: "center",
       editable: true,
       renderCell: (params) => (
         <Box
@@ -178,6 +181,8 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
       headerName: "Credits",
       flex: 0.7,
       minWidth: 60,
+      headerAlign: "center",
+      align: "center",
       editable: true,
       renderCell: (params) => (
         <Box

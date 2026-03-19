@@ -65,7 +65,7 @@ const CurriculaUploadModal: React.FC<CurriculaUploadModalProps> = ({ open, handl
                 response = await CourseService.uploadCourses(formData);
             }
 
-            console.log('Upload response:', response);
+            // console.log('Upload response:', response);
 
             if (response.status === 200 || response.status === 201) {
                 setSnackbarOpen(true);

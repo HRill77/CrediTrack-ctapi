@@ -58,8 +58,8 @@ const SyllabiTable: React.FC<SyllabiTableProps> = ({
   const isProgramHead = authorities.includes("ROLE_PROGRAM_HEAD");
   const isSystemAdmin = authorities.includes("ROLE_HIDDEN"); // 👈 added
 
-  console.log("Current User in SyllabiTable:", currentUser);
-  console.log("Is System Admin:", isSystemAdmin);
+  // console.log("Current User in SyllabiTable:", currentUser);
+  // console.log("Is System Admin:", isSystemAdmin);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
@@ -140,7 +140,7 @@ const SyllabiTable: React.FC<SyllabiTableProps> = ({
   const [openOutline, setOpenOutline] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
 
-  console.log("Selected Course:", selectedCourse);
+  // console.log("Selected Course:", selectedCourse);
 
   const handleViewOutline = (course: any) => {
     setSelectedCourse(course);
@@ -161,7 +161,7 @@ const SyllabiTable: React.FC<SyllabiTableProps> = ({
   };
 
   const handleDeleteSyllabi = (rowData: SyllabiInterface) => {
-    console.log("Delete Syllabi:", rowData);
+    // console.log("Delete Syllabi:", rowData);
     setSyllabiToDelete(rowData);
     setDeleteConfirmOpen(true);
     handleMenuClose();

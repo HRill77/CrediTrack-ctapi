@@ -37,8 +37,8 @@ const CurriculaTable: React.FC<CurriculaTableProps> = ({
   const authorities = currentUser?.authorities || [];
   const isProgramHead = authorities.includes('ROLE_PROGRAM_HEAD');
 
-  console.log("Current User in CurriculaTable:", currentUser);
-  console.log("Is Program Head:", isProgramHead);
+  // console.log("Current User in CurriculaTable:", currentUser);
+  // console.log("Is Program Head:", isProgramHead);
 
   // const [rows, setRows] = useState<any[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -82,7 +82,7 @@ const CurriculaTable: React.FC<CurriculaTableProps> = ({
 
 
   const { data, refetch, isLoading } = useGetCurriculaserQueries(convertedFilters);
-  console.log("Curricula data:", data);
+  // console.log("Curricula data:", data);
 
   useEffect(() => {
     const prev = prevFiltersRef.current;
@@ -137,7 +137,7 @@ const CurriculaTable: React.FC<CurriculaTableProps> = ({
 
   // Handle action commands
   const handleUpdateCurricula = (rowData: CurriculaInterface) => {
-    console.log("Update Curricula:", rowData);
+    // console.log("Update Curricula:", rowData);
     // setEditingCurricula(rowData);
     setFormData(rowData);
     setOriginalFormData(rowData);
@@ -166,7 +166,7 @@ const CurriculaTable: React.FC<CurriculaTableProps> = ({
   };
 
   const handleDeleteCurricula = (rowData: CurriculaInterface) => {
-    console.log("Delete Curricula:", rowData);
+    // console.log("Delete Curricula:", rowData);
     setCurriculaToDelete(rowData);
     setDeleteConfirmOpen(true);
     handleMenuClose();

@@ -3,5 +3,5 @@ export interface TranscriptDto {
   subjectCode: string | null;
   courseName: string | null;
   grade: string | null;
-  credits: number | null;
+  units: number | null;
 }

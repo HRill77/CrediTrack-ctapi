@@ -54,8 +54,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, handleClose }) => {
   
 
   const [errors, setErrors] = useState<Partial<UserFormData>>({});
-  console.log("formData", formData);
-  console.log("errors", errors);
+  // console.log("formData", formData);
+  // console.log("errors", errors);
   const { data: roles } = useGetAllRoles();
   const { data: programs } = useGetAllPrograms();
   const queryClient = useQueryClient();
@@ -77,7 +77,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, handleClose }) => {
     [roles],
   );
 
-  console.log("selectedRoleList", roleList.find((r: any) => r.value === formData.roleId));
+  // console.log("selectedRoleList", roleList.find((r: any) => r.value === formData.roleId));
 
   const programList = useMemo(
     () =>
@@ -192,7 +192,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, handleClose }) => {
 
     try {
       setIsSaving(true);
-      console.log("Saving user:", formData);
+      // console.log("Saving user:", formData);
       await AuthService.register(formData);
       showSuccess("User registered successfully!");
       queryClient.invalidateQueries({ queryKey: ["getUsers"] });

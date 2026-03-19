@@ -21,6 +21,34 @@ public class TranscriptService {
     private final OcrCorrectionService correctionService;
     private final UniversityLayoutRepository layoutRepository;
 
+    //  public String processTranscript2(List<MultipartFile> files) throws Exception {
+
+    //     String allText = "";
+    //     for (MultipartFile file : files) {
+    //         if (file.isEmpty())
+    //             continue;
+
+    //         File temp = File.createTempFile("transcript", ".jpg");
+    //         file.transferTo(temp);
+
+    //         try {
+    //             String words = ocrService.extractWords2(temp);
+
+    //             // System.out.println("========== OCR WORDS START ==========");
+    //             // for (VisionWordDto w : words) {
+    //             //     System.out.println("Text: " + w.getText() + " | X: " + w.getX() + " | Y: " + w.getY());
+    //             // }
+    //             // System.out.println("========== OCR WORDS END ==========");
+
+    //             allText += words;
+    //         } finally {
+    //             temp.delete();
+    //         }
+    //     }
+
+    //     return allText;
+    // }
+
     public List<TranscriptDto> processTranscript(List<MultipartFile> files) throws Exception {
 
         List<TranscriptDto> allResults = new ArrayList<>();
@@ -35,11 +63,11 @@ public class TranscriptService {
             try {
                 List<VisionWordDto> words = ocrService.extractWords(temp);
 
-                System.out.println("========== OCR WORDS START ==========");
-                for (VisionWordDto w : words) {
-                    System.out.println("Text: " + w.getText() + " | X: " + w.getX() + " | Y: " + w.getY());
-                }
-                System.out.println("========== OCR WORDS END ==========");
+                // System.out.println("========== OCR WORDS START ==========");
+                // for (VisionWordDto w : words) {
+                //     System.out.println("Text: " + w.getText() + " | X: " + w.getX() + " | Y: " + w.getY());
+                // }
+                // System.out.println("========== OCR WORDS END ==========");
 
                 List<TranscriptDto> results = parse(words);
                 allResults.addAll(results);

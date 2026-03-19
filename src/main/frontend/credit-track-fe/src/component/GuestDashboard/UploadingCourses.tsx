@@ -112,10 +112,10 @@ const UploadingCourses: React.FC<UploadingCoursesProps> = ({
   };
 
   const handleUploadTranscript = async () => {
-    if (!studentEmail.trim()) {
-      setUploadError("Student email is required to upload transcript.");
-      return;
-    }
+    // if (!studentEmail.trim()) {
+    //   setUploadError("Student email is required to upload transcript.");
+    //   return;
+    // }
     if (uploadedFiles.transcript.length === 0) {
       setUploadError("Please select at least one file to upload.");
       return;
@@ -127,7 +127,7 @@ const UploadingCourses: React.FC<UploadingCoursesProps> = ({
       const response = await TranscriptService.uploadTranscript(
         uploadedFiles.transcript,
       );
-      console.log("RAW API RESPONSE:", JSON.stringify(response.data));
+      // console.log("RAW API RESPONSE:", JSON.stringify(response.data));
       if (response.data && Array.isArray(response.data)) {
         const transcriptRows: TranscriptRow[] = response.data.map(
           (dto: TranscriptDto, index: number) => ({
@@ -136,7 +136,7 @@ const UploadingCourses: React.FC<UploadingCoursesProps> = ({
             subject: dto.subjectCode || "",
             name: dto.courseName || "",
             grade: dto.grade || "",
-            credits: dto.credits?.toString() || "",
+            credits: dto.units?.toString() || "",
           }),
         );
         const updatedData = transcriptRows;
