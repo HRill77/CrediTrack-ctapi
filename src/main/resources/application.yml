@@ -1,0 +1,107 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  profiles:
+    active: uat #gagawin mo itong uat if may idedeploy ka ganito lang
+  mvc:
+    async:
+      request-timeout: 720000
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+      enabled: true
+
+  # Local MariaDB datasource
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    hikari:
+      connection-timeout: 120000
+      idle-timeout: 120000
+      connection-test-query: SELECT 1
+      validation-timeout: 120000
+      maximum-pool-size: 10
+      minimum-idle: 5
+
+  jpa:
+    # show-sql: true
+    properties:
+      hibernate:
+        # format_sql: true
+        jdbc:
+        time_zone: Asia/Manila
+        batch_size: 50
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+        lob:
+          non_contextual_creation: true
+        dialect: org.hibernate.dialect.MariaDBDialect
+    # Hibernate ddl auto (create, create-drop, validate, update)
+    hibernate:
+      ddl-auto: update
+
+    # show-sql: true
+
+  #   thymeleaf:
+  #    prefix: file:///${user.dir}//target//classes//static/
+  #mail:
+  # host: smtp.gmail.com
+  # port: 587
+  # username: inquiry.creditrack@gmail.com
+  # password: bubvjempkfkoowjr
+  # properties:
+  #mail:
+  # smtp:
+  # auth: true
+  #  starttls:
+  #   enable: true
+  #    connectiontimeout: 7200000
+  #  timeout: 7200000
+  #   writetimeout: 7200000
+
+sendgrid:
+  api:
+    key: ${SENDGRID_API_KEY}
+  from:
+    email: inquiry.creditrack@gmail.com
+
+google:
+  gemini:
+    api-key: ${GEMINI_API_KEY}
+
+server:
+  servlet:
+    session:
+      timeout: 30m
+  port: 5000
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,text/css,text/javascript,application/javascript
+
+  error:
+    whitelabel:
+      enabled: true
+
+info:
+  app:
+    name: Credit Track Application
+    version: 1.0.0
+  id: crediTrack
+
+logging:
+  level:
+    root: INFO
+    org.springframework: ERROR
+    org.springframework.web: DEBUG
+    org.springframework.web.client.RestTemplate: OFF
+    org.hibernate.SQL: OFF
+    org.hibernate.type.descriptor.sql: OFF
+    com.example.security: DEBUG
+  file:
+    name: logs/app.log
+
+#google:
+# vision:
+# api-key: "AIzaSyCi4l-9x5KhtKXr7839nC4rYg-RdrKzy8I"
