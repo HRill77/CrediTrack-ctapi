@@ -3,7 +3,7 @@ spring:
     allow-bean-definition-overriding: true
   profiles:
     active: uat
-    
+
   servlet:
     multipart:
       max-file-size: 5MB
@@ -54,6 +54,9 @@ spring:
           auth: true
           starttls:
             enable: true
+          connectiontimeout: 7200000
+          timeout: 7200000
+          writetimeout: 7200000
 
 server:
   servlet:
