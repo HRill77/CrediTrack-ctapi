@@ -37,7 +37,15 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/static/**").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/dashboard/**",
+                                "/account",
+                                "/forgot-password",
+                                "/update-password",
+                                "/static/**")
+                        .permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/check-temp-password",
                                 "/api/auth/update-temp-password",
@@ -60,11 +68,11 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("https://creditrack.onrender.com/",
+        configuration.setAllowedOriginPatterns(List.of("https://creditrack.onrender.com",
                 "http://localhost:9997",
                 "http://localhost:3000"));
         configuration.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                "*"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

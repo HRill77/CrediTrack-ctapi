@@ -18,7 +18,13 @@ public class ReactController implements ErrorController {
 
     private static final Logger log = LoggerFactory.getLogger(ReactController.class);
 
-     @RequestMapping(value = {"/", "/{path:[^\\.]*}"})
+    @RequestMapping(value = {
+            "/",
+            "/dashboard/**",
+            "/account",
+            "/forgot-password",
+            "/update-password"
+    })
     public String redirect() {
         return "forward:/index.html";
     }
