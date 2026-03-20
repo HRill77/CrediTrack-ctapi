@@ -53,12 +53,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await AuthService.logout();
     setCurrentUser(undefined);
     queryClient.removeQueries({ queryKey: USER_QUERY_KEY });
-    sessionStorage.removeItem('isGuest');
+    localStorage.removeItem('isGuest');
     navigate('/');
   };
 
   useEffect(() => {
-    const isGuest = sessionStorage.getItem('isGuest') === 'true';
+    const isGuest = localStorage.getItem('isGuest') === 'true';
     // Don't check auth if user is a guest
     if (isGuest) {
       setIsAuthLoading(false);

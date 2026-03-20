@@ -24,8 +24,8 @@ import NotFound from "./shared/component/NotFound";
 const App: React.FC = () => {
   const { isAuthLoading } = useContext(AuthContext);
   const [isGuestResultOpen, setIsGuestResultOpen] = useState(true);
-  const isGuest = sessionStorage.getItem("isGuest") === "true";
-  // console.log("isGuest in App.tsx:", isGuest);
+  const isGuest = localStorage.getItem("isGuest") === "true";
+  console.log("isGuest in App.tsx:", isGuest);
   if (isAuthLoading) {
     // console.log("Auth loading in ProtectedRoute:", isAuthLoading);
     return (
@@ -57,16 +57,26 @@ const App: React.FC = () => {
           />
         }
       />
+
+      {/* Guest / Student Dashboard */}
       <Route
-        path="/dashboard/*"
+        path="/student-dashboard/*"
         element={
           isGuest ? (
             <GuestDashboard />
           ) : (
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
+            <Navigate to="/" replace />
           )
+        }
+      />
+
+      {/* Authenticated Dashboard */}
+      <Route
+        path="/dashboard/*"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
         }
       />
       <Route path="/account" element={<Account />} />
@@ -74,7 +84,7 @@ const App: React.FC = () => {
 
       <Route path="/update-password" element={<UpdatePassword />} />
       <Route path="forgot-password" element={<ForgotPassword />} />
-           
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

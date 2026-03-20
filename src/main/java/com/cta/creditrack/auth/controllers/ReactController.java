@@ -21,6 +21,7 @@ public class ReactController implements ErrorController {
     @RequestMapping(value = {
             "/",
             "/dashboard/**",
+            "/student-dashboard/**",
             "/account",
             "/forgot-password",
             "/update-password"
