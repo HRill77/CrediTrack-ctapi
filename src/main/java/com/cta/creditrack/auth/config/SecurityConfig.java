@@ -37,14 +37,20 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
+                         .requestMatchers(
                                 "/",
                                 "/index.html",
+                                "/manifest.json",
+                                "/robots.txt",
+                                "/favicon.ico",
                                 "/dashboard/**",
                                 "/account",
                                 "/forgot-password",
                                 "/update-password",
-                                "/static/**")
+                                "/static/**",
+                                "/css/**",
+                                "/js/**",
+                                "/media/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/check-temp-password",
