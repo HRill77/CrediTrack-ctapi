@@ -2,7 +2,10 @@ spring:
   main:
     allow-bean-definition-overriding: true
   profiles:
-    active: dev
+    active: uat #gagawin mo itong uat if may idedeploy ka ganito lang
+  mvc:
+    async:
+      request-timeout: 720000
 
   servlet:
     multipart:
@@ -14,13 +17,13 @@ spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
     hikari:
-     connection-timeout: 120000
-     idle-timeout: 120000 
-     connection-test-query: SELECT 1
-     validation-timeout: 120000
-     maximum-pool-size: 10
-     minimum-idle: 5
-  
+      connection-timeout: 120000
+      idle-timeout: 120000
+      connection-test-query: SELECT 1
+      validation-timeout: 120000
+      maximum-pool-size: 10
+      minimum-idle: 5
+
   jpa:
     # show-sql: true
     properties:
@@ -41,19 +44,32 @@ spring:
 
     # show-sql: true
 
-#   thymeleaf:
-#    prefix: file:///${user.dir}//target//classes//static/
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: inquiry.creditrack@gmail.com
-    password: bubvjempkfkoowjr
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
+  #   thymeleaf:
+  #    prefix: file:///${user.dir}//target//classes//static/
+  #mail:
+  # host: smtp.gmail.com
+  # port: 587
+  # username: inquiry.creditrack@gmail.com
+  # password: bubvjempkfkoowjr
+  # properties:
+  #mail:
+  # smtp:
+  # auth: true
+  #  starttls:
+  #   enable: true
+  #    connectiontimeout: 7200000
+  #  timeout: 7200000
+  #   writetimeout: 7200000
+
+sendgrid:
+  api:
+    key: ${SENDGRID_API_KEY}
+  from:
+    email: inquiry.creditrack@gmail.com
+
+google:
+  gemini:
+    api-key: ${GEMINI_API_KEY}
 
 server:
   servlet:
@@ -63,11 +79,10 @@ server:
   compression:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain,text/css,text/javascript,application/javascript
-  
+
   error:
     whitelabel:
-     enabled: true
-
+      enabled: true
 
 info:
   app:
@@ -77,7 +92,7 @@ info:
 
 logging:
   level:
-    root: INFO 
+    root: INFO
     org.springframework: ERROR
     org.springframework.web: DEBUG
     org.springframework.web.client.RestTemplate: OFF
@@ -87,11 +102,6 @@ logging:
   file:
     name: logs/app.log
 
-
-
-google:
-  vision:
-    api-key: "AIzaSyCi4l-9x5KhtKXr7839nC4rYg-RdrKzy8I"
-
-
-  
+#google:
+# vision:
+# api-key: "AIzaSyCi4l-9x5KhtKXr7839nC4rYg-RdrKzy8I"

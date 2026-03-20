@@ -2,9 +2,7 @@ package com.cta.creditrack.auth.config;
 
 import lombok.RequiredArgsConstructor;
 
-
 import java.util.*;
-
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,39 +30,49 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
 
     @Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-        .csrf(csrf -> csrf.disable())
-        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .sessionManagement(session -> session
-            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-        )
-        .authorizeHttpRequests(auth -> 
-            auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-              .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/check-temp-password", "/api/auth/update-temp-password",
-              "/api/auth/forgot-password", "/api/ingest/curricula", "/api/student/**" ,"/api/files/**" ,"/api/ingest/**", "/api/transcripts/**", "/api/document-ai/**", "/api/transcript-evaluation/**", "/api/curricula/list/by-program-and-course-title/**", 
-            "/api/**" ).permitAll()
-              .requestMatchers("/api/auth/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_USER", "ROLE_ADMIN", "ROLE_PROGRAM_HEAD")
-              .anyRequest().authenticated()
-        )
-        .authenticationProvider(daoAuthProvider())
-        .exceptionHandling(ex -> ex
-            .authenticationEntryPoint((req, res, e) -> res.sendError(401, "Unauthorized"))
-            .accessDeniedHandler((req, res, e) -> res.sendError(403, "Forbidden"))
-        );
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/dashboard/**",
+                                "/account",
+                                "/forgot-password",
+                                "/update-password",
+                                "/static/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/check-temp-password",
+                                "/api/auth/update-temp-password",
+                                "/api/auth/forgot-password", "/api/ingest/curricula", "/api/student/**",
+                                "/api/files/**", "/api/ingest/**", "/api/transcripts/**", "/api/document-ai/**",
+                                "/api/transcript-evaluation/**", "/api/curricula/list/by-program-and-course-title/**",
+                                "/api/**")
+                        .permitAll()
+                        .requestMatchers("/api/auth/**")
+                        .hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_PROGRAM_HEAD")
+                        .anyRequest().authenticated())
+                .authenticationProvider(daoAuthProvider())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) -> res.sendError(401, "Unauthorized"))
+                        .accessDeniedHandler((req, res, e) -> res.sendError(403, "Forbidden")));
 
-    return http.build();
-}
-
+        return http.build();
+    }
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of(
+        configuration.setAllowedOriginPatterns(List.of("https://creditrack.onrender.com",
                 "http://localhost:9997",
                 "http://localhost:3000"));
         configuration.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                "*"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

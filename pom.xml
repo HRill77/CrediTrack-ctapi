@@ -63,10 +63,6 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-mail</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.mariadb.jdbc</groupId>
 			<artifactId>mariadb-java-client</artifactId>
 			<scope>runtime</scope>
@@ -100,6 +96,12 @@
     </dependency>
 
     <dependency>
+    <groupId>com.sendgrid</groupId>
+    <artifactId>sendgrid-java</artifactId>
+    <version>4.10.2</version>
+    </dependency>
+
+    <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>32.1.2-jre</version>
@@ -108,6 +110,17 @@
     <groupId>org.apache.commons</groupId>
     <artifactId>commons-text</artifactId>
     <version>1.11.0</version>
+</dependency>
+<dependency>
+    <groupId>com.itextpdf</groupId>
+    <artifactId>itext7-core</artifactId>
+    <version>8.0.3</version>
+    <type>pom</type>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
 </dependency>
 
 	<!-- Source: https://mvnrepository.com/artifact/net.sourceforge.tess4j/tess4j -->

@@ -55,24 +55,24 @@ public class User {
     private Boolean isWhitelisted;
 
     /** Forces user to change password on login */
-    @Column(nullable = false)
+    
     private Boolean mustChangePassword = true;
 
     /** When the current password was set */
-    @Column(name = "password_set_at", nullable = false)
+    @Column(name = "password_set_at")
     private Instant passwordSetAt;
 
     /** Optional: when temp password expires */
     @Column(name = "password_expires_at")
     private Instant passwordExpiresAt;
 
-        @Column(name = "filename", nullable = false)
+        @Column(name = "filename")
     private String filename;
 
-    @Column(name = "file_type", nullable = false)
+    @Column(name = "file_type")
     private String fileType;
     @Lob
-    @Column(name = "file_data", nullable = false, columnDefinition = "LONGBLOB")
+    @Column(name = "file_data", columnDefinition = "LONGBLOB")
     private byte[] fileData;
     
     @Column(name = "file_size")

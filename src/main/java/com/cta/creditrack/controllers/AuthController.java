@@ -22,6 +22,7 @@ import com.cta.creditrack.services.BruteForceProtectionService;
 import com.cta.creditrack.auth.model.CustomUserDetials;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -208,6 +209,15 @@ public class AuthController {
     return ResponseEntity.ok(Map.of(
             "username", userDetails.getUsername(),
             "fullName", fullName,
+            "programs", user.getPrograms() != null 
+                ? user.getPrograms().stream()
+                    .map(p -> Map.of(
+                        "id", p.getId(),
+                        "name", p.getName() != null ? p.getName() : "",
+                        "code", p.getCode() != null ? p.getCode() : ""
+                    ))
+                    .toList()
+                : List.of(),
             "authorities", userDetails.getAuthorities()
                     .stream()
                     .map(GrantedAuthority::getAuthority)

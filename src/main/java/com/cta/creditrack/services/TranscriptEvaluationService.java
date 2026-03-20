@@ -2,6 +2,7 @@ package com.cta.creditrack.services;
 
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.cta.creditrack.dtos.ApprovalsDTO;
 import com.cta.creditrack.dtos.CurriculaDTO;
 import com.cta.creditrack.dtos.EvaluationItem;
 import com.cta.creditrack.dtos.FileUploadDTO;
@@ -17,17 +19,22 @@ import com.cta.creditrack.dtos.TranscriptEvaluationGroupedResponse;
 import com.cta.creditrack.dtos.TranscriptEvaluationSearchRequest;
 
 import com.cta.creditrack.dtos.UpsertTranscriptEvaluationRequest;
+import com.cta.creditrack.dtos.UserProgramDetailsDto;
+import com.cta.creditrack.model.Approvals;
 import com.cta.creditrack.model.Curricula;
+import com.cta.creditrack.model.Program;
 import com.cta.creditrack.model.Student;
 import com.cta.creditrack.model.Transcript;
 import com.cta.creditrack.model.TranscriptEvaluation;
+import com.cta.creditrack.model.User;
+import com.cta.creditrack.repository.ApprovalsRepository;
 import com.cta.creditrack.repository.CurriculaRepository;
+import com.cta.creditrack.repository.ProgramRepository;
 import com.cta.creditrack.repository.StudentRepository;
 import com.cta.creditrack.repository.TranscriptEvaluationRepository;
 import com.cta.creditrack.repository.TranscriptRepository;
 
 import jakarta.transaction.Transactional;
-
 
 @Service
 @RequiredArgsConstructor
@@ -38,10 +45,13 @@ public class TranscriptEvaluationService {
     private final CurriculaRepository curriculaRepository;
     private final StudentRepository studentRepository;
     private final TranscriptRepository transcriptRepository;
+    private final ApprovalsRepository approvalsRepository;
+    private final ProgramRepository programRepository;
 
     public Page<TranscriptEvaluationGroupedResponse> searchTranscriptEvaluations(
             TranscriptEvaluationSearchRequest request,
-            Pageable pageable) {
+            Pageable pageable,
+            User user) {
 
         if (request == null) {
             throw new IllegalArgumentException("Request body cannot be null");
@@ -58,39 +68,75 @@ public class TranscriptEvaluationService {
                     request.studentName(),
                     request.fromProgram(),
                     request.fromUniversity(),
-                    request.toProgram()
-            );
+                    request.toProgram());
+
+            log.info("rows {}", rows);
 
             if (rows == null || rows.isEmpty()) {
                 return new PageImpl<>(Collections.emptyList(), pageable, 0);
             }
 
-            Map<Long, TranscriptEvaluationGroupedResponse> grouped =
-                    new LinkedHashMap<>();
+            Map<Long, TranscriptEvaluationGroupedResponse> grouped = new LinkedHashMap<>();
 
+            // Get user's program codes/names for filtering
+            Long ids = user.getId();
+            List<Object[]> userProgramDetailsOpt = programRepository.findProgramsByUserId(ids);
+            List<UserProgramDetailsDto> userProgramDetails = userProgramDetailsOpt.stream()
+                    .map(row -> new UserProgramDetailsDto(
+                            ((Number) row[0]).longValue(),
+                            ((Number) row[1]).longValue(),
+                            (String) row[2],
+                            (String) row[3]))
+                    .collect(Collectors.toList());
+
+            String userProgramNames;
+            if (!userProgramDetails.isEmpty()) {
+                userProgramNames = userProgramDetails.get(0).name().toUpperCase();
+            } else {
+                userProgramNames = "";
+            }
+            log.info("userProgramNames{}", userProgramNames);
+            log.info("User {} has access to programs: {}", user.getEmail(), userProgramNames);
             for (Object[] row : rows) {
 
-                if (row == null) continue;
+                if (row == null)
+                    continue;
 
                 Long studentId = (Long) row[27];
 
-                if (studentId == null) continue;
+                if (studentId == null)
+                    continue;
 
-                 FileUploadDTO fileUpload = null;
+                // Filter based on user's assigned programs
+                String studentToProgram = (String) row[37];
 
-            if (row[35] != null) {
-                fileUpload = new FileUploadDTO(
-                        (Long) row[35],
-                        (String) row[36],
-                        (String) row[37],
-                        row[38] != null ? ((Number) row[38]).longValue() : null,
-                        (String) row[39],
-                        (String) row[40],
-                        row[41] != null ? ((Number) row[41]).longValue() : null,
-                        row[42] != null ? ((Timestamp) row[42]).toLocalDateTime() : null
-                );
-            }
+                log.info("Evaluating student {} with program {} against user programs {}", studentId, studentToProgram,
+                        userProgramNames);
 
+                if (studentToProgram == null) {
+                    continue;
+                }
+
+                if (!userProgramNames.contains(studentToProgram.toUpperCase())) {
+                    continue;
+                }
+
+                FileUploadDTO fileUpload = null;
+
+                if (row[39] != null) {
+                    fileUpload = new FileUploadDTO(
+                            (Long) row[39],
+                            (String) row[40],
+                            (String) row[41],
+                            row[42] != null ? ((Number) row[42]).longValue() : null,
+                            (String) row[43],
+                            (String) row[44],
+                            row[45] != null ? ((Number) row[45]).longValue() : null,
+                            row[46] != null ? ((Timestamp) row[46]).toLocalDateTime() : null);
+                }
+
+                ApprovalsDTO approvalsDTO = null;
+                approvalsDTO = getApprovalsDTOByStudentAndUser(studentId, user.getId());
                 grouped.putIfAbsent(studentId,
                         new TranscriptEvaluationGroupedResponse(
                                 studentId,
@@ -101,10 +147,12 @@ public class TranscriptEvaluationService {
                                 (String) row[32],
                                 (String) row[33],
                                 (String) row[34],
+                                (String) row[35],
+                                (String) row[36],
+                                (String) row[37],
                                 fileUpload,
-                                new ArrayList<>()
-                        )
-                );
+                                new ArrayList<>(),
+                                approvalsDTO));
 
                 TranscriptDTO2 transcript = new TranscriptDTO2(
                         (Long) row[8],
@@ -114,8 +162,7 @@ public class TranscriptEvaluationService {
                         (String) row[12],
                         row[13] != null ? ((Number) row[13]).intValue() : null,
                         row[14] != null ? ((Timestamp) row[14]).toLocalDateTime() : null,
-                        row[15] != null ? ((Timestamp) row[15]).toLocalDateTime() : null
-                );
+                        row[15] != null ? ((Timestamp) row[15]).toLocalDateTime() : null);
 
                 CurriculaDTO curricula = new CurriculaDTO(
                         (Long) row[16],
@@ -128,8 +175,7 @@ public class TranscriptEvaluationService {
                         (String) row[23],
                         row[24] != null ? ((Number) row[24]).intValue() : null,
                         row[25] != null ? ((Number) row[25]).intValue() : null,
-                        row[26] != null ? ((Number) row[26]).intValue() : null
-                );
+                        row[26] != null ? ((Number) row[26]).intValue() : null);
 
                 EvaluationItem evaluation = new EvaluationItem(
                         (Long) row[0],
@@ -141,14 +187,12 @@ public class TranscriptEvaluationService {
                         (Boolean) row[4],
                         (String) row[5],
                         row[6] != null ? ((Timestamp) row[6]).toLocalDateTime() : null,
-                        row[7] != null ? ((Timestamp) row[7]).toLocalDateTime() : null
-                );
+                        row[7] != null ? ((Timestamp) row[7]).toLocalDateTime() : null);
 
                 grouped.get(studentId).evaluation().add(evaluation);
             }
 
-            List<TranscriptEvaluationGroupedResponse> result =
-                    new ArrayList<>(grouped.values());
+            List<TranscriptEvaluationGroupedResponse> result = new ArrayList<>(grouped.values());
 
             int start = (int) pageable.getOffset();
             int total = result.size();
@@ -169,83 +213,129 @@ public class TranscriptEvaluationService {
         }
     }
 
-   @Transactional
-public void upsertTranscriptEvaluations(
-        UpsertTranscriptEvaluationRequest request) {
+    @Transactional
+    public void upsertTranscriptEvaluations(
+            UpsertTranscriptEvaluationRequest request, User user) {
 
-    Student student = studentRepository.findById(request.studentId())
-            .orElseThrow(() -> new IllegalArgumentException("Student not found"));
+        Student student = studentRepository.findById(request.studentId())
+                .orElseThrow(() -> new IllegalArgumentException("Student not found"));
 
-    for (UpsertTranscriptEvaluationRequest.EvaluationItem item : request.evaluations()) {
+        for (UpsertTranscriptEvaluationRequest.EvaluationItem item : request.evaluations()) {
 
-        // ===============================
-        // HANDLE DELETE
-        // ===============================
-        if (Boolean.TRUE.equals(item.deleted())) {
+            // ===============================
+            // HANDLE DELETE
+            // ===============================
+            if (Boolean.TRUE.equals(item.deleted())) {
 
-             if (item.evaluationId() != null) {
+                if (item.evaluationId() != null) {
 
-                repository.findById(item.evaluationId())
-                        .ifPresent(evaluation -> {
+                    repository.findById(item.evaluationId())
+                            .ifPresent(evaluation -> {
 
-                            Transcript transcript = evaluation.getTranscript();
+                                Transcript transcript = evaluation.getTranscript();
 
-                            repository.delete(evaluation);
+                                repository.delete(evaluation);
 
-                            if (transcript != null) {
-                                transcriptRepository.delete(transcript);
-                            }
-                        });
+                                if (transcript != null) {
+                                    transcriptRepository.delete(transcript);
+                                }
+                            });
+                }
+
+                continue; // skip further processing
             }
 
-            continue; // skip further processing
+            // ===============================
+            // TRANSCRIPT (CREATE OR UPDATE)
+            // ===============================
+            Transcript transcript;
+
+            if (item.transcriptId() != null) {
+                transcript = transcriptRepository.findById(item.transcriptId())
+                        .orElseThrow(() -> new IllegalArgumentException("Transcript not found"));
+            } else {
+                transcript = new Transcript();
+                transcript.setStudent(student);
+            }
+
+            transcript.setCourseName(item.courseName());
+            transcript.setSubjectCode(item.subjectCode());
+            transcript.setCredits(item.units());
+            transcript.setGrade(item.grade());
+
+            transcriptRepository.save(transcript);
+
+            // ===============================
+            // EVALUATION (CREATE OR UPDATE)
+            // ===============================
+            TranscriptEvaluation evaluation;
+
+            if (item.evaluationId() != null) {
+                evaluation = repository.findById(item.evaluationId())
+                        .orElseThrow(() -> new IllegalArgumentException("Evaluation not found"));
+            } else {
+                evaluation = new TranscriptEvaluation();
+                evaluation.setTranscript(transcript);
+            }
+
+            if (item.curriculaId() != null) {
+                Curricula curricula = curriculaRepository.findById(item.curriculaId())
+                        .orElseThrow(() -> new IllegalArgumentException("Curricula not found"));
+                evaluation.setCurricula(curricula);
+            }
+
+            evaluation.setRemarks(item.remarks());
+            evaluation.setConfidenceScore(item.confidenceScore());
+            evaluation.setFinalApproved(item.finalApproved());
+
+            repository.save(evaluation);
+
+            // Check if approval already exists for student and user
+            if (approvalsRepository.existsByStudentIdAndUserId(student.getId(), user.getId())) {
+                // Update existing approval
+                List<Approvals> existingApprovals = approvalsRepository.findByStudentIdAndUserId(
+                        student.getId(), user.getId());
+                if (!existingApprovals.isEmpty()) {
+                    Approvals approval = existingApprovals.get(0);
+                    approvalsRepository.save(approval);
+                }
+            } else {
+                // Create new approval
+                Approvals approval = new Approvals();
+                approval.setStudent(student);
+                approval.setUser(user);
+                approvalsRepository.save(approval);
+            }
+
         }
-
-        // ===============================
-        //  TRANSCRIPT (CREATE OR UPDATE)
-        // ===============================
-        Transcript transcript;
-
-        if (item.transcriptId() != null) {
-            transcript = transcriptRepository.findById(item.transcriptId())
-                    .orElseThrow(() -> new IllegalArgumentException("Transcript not found"));
-        } else {
-            transcript = new Transcript();
-            transcript.setStudent(student);
-        }
-
-        transcript.setCourseName(item.courseName());
-        transcript.setSubjectCode(item.subjectCode());
-        transcript.setCredits(item.units());
-        transcript.setGrade(item.grade());
-
-        transcriptRepository.save(transcript);
-
-        // ===============================
-        // EVALUATION (CREATE OR UPDATE)
-        // ===============================
-        TranscriptEvaluation evaluation;
-
-        if (item.evaluationId() != null) {
-            evaluation = repository.findById(item.evaluationId())
-                    .orElseThrow(() -> new IllegalArgumentException("Evaluation not found"));
-        } else {
-            evaluation = new TranscriptEvaluation();
-            evaluation.setTranscript(transcript);
-        }
-
-        if (item.curriculaId() != null) {
-            Curricula curricula = curriculaRepository.findById(item.curriculaId())
-                    .orElseThrow(() -> new IllegalArgumentException("Curricula not found"));
-            evaluation.setCurricula(curricula);
-        }
-
-        evaluation.setRemarks(item.remarks());
-        evaluation.setConfidenceScore(item.confidenceScore());
-        evaluation.setFinalApproved(item.finalApproved());
-
-        repository.save(evaluation);
     }
-}
+
+    private ApprovalsDTO getApprovalsDTOByStudentAndUser(Long studentId, Long userId) {
+        List<Approvals> approvals = approvalsRepository.findByStudentIdAndUserId(studentId, userId);
+        if (!approvals.isEmpty()) {
+            Approvals approval = approvals.get(0);
+            return new ApprovalsDTO(
+                    approval.getId(),
+                    approval.getApprovedDate(),
+                    approval.getStudent().getId(),
+                    approval.getUser().getId());
+        }
+        return null;
+    }
+
+    public TranscriptEvaluationGroupedResponse getEvaluationByStudentId(Long studentId, User user) {
+
+        TranscriptEvaluationSearchRequest req = new TranscriptEvaluationSearchRequest(null, null, null, null, null,
+                null);
+
+        Page<TranscriptEvaluationGroupedResponse> page = searchTranscriptEvaluations(req,
+                PageRequest.of(0, 100),
+                user);
+
+        return page.getContent().stream()
+                .filter(r -> r.studentId().equals(studentId))
+                .findFirst()
+                .orElseThrow();
+    }
 
 }

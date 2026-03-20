@@ -95,14 +95,14 @@ public class DataIngestionController {
         try {
             log.info("Uploading courses from file: {}", file.getOriginalFilename());
 
-           if (file.isEmpty()) {
+            if (file.isEmpty()) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", false);
                 response.put("message", "File is empty");
                 return ResponseEntity.badRequest().body(response);
             }
 
-              if (!dataIngestionService.isValidFile(file)) {
+            if (!dataIngestionService.isValidFile(file)) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", false);
                 response.put("message", "Invalid file format. Please upload an Excel (.xlsx, .xls)");
@@ -110,15 +110,14 @@ public class DataIngestionController {
             }
 
             // String fileType = dataIngestionService.getFileType(file);
-             dataIngestionService.ingestCourseDataFromExcel(file.getInputStream());
+            dataIngestionService.ingestCourseDataFromExcel(file.getInputStream());
 
-           
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Courses data ingested successfully");
             return ResponseEntity.ok(response);
 
-         } catch (IOException e) {
+        } catch (IOException e) {
             log.error("Failed to ingest courses data", e);
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -221,13 +220,11 @@ public class DataIngestionController {
         }
     }
 
-   
-
-        private Map<String, Object> createErrorResponse(Boolean success, String message) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", success);
-            response.put("message", message);
-            return response;
-        }
-    
+    private Map<String, Object> createErrorResponse(Boolean success, String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", success);
+        response.put("message", message);
+        return response;
     }
+
+}
