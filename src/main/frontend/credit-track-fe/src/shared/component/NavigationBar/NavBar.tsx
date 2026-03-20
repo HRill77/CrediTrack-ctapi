@@ -22,7 +22,8 @@ const NavBar = ({
   const location = useLocation();
   
   // Show menu items only if not in dashboard
-  const pages = location.pathname.includes('/dashboard') || location.pathname.includes('/account')
+  const pages = location.pathname.includes('/dashboard') || location.pathname.includes('/account') ||
+    location.pathname.includes('/student-dashboard')
     ? undefined 
     : [
         { label: 'About', onClick: onAboutClick },

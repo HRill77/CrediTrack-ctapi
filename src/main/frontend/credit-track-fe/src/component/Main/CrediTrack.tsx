@@ -131,8 +131,8 @@ const CrediTrack = () => {
 
   const handleForgotPassword = () => navigate("/forgot-password");
   const handleSignInAsGuest = () => {
-    sessionStorage.setItem("isGuest", "true");
-    navigate("/dashboard");
+    localStorage.setItem("isGuest", "true");
+    navigate("/student-dashboard");
   };
 
   return (
