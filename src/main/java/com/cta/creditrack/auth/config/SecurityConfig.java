@@ -44,6 +44,8 @@ public class SecurityConfig {
                                 "/robots.txt",
                                 "/favicon.ico",
                                 "/dashboard/**",
+                                "/student-dashboard/**",
+                                "/GuestCreditTrackResult/**",
                                 "/account",
                                 "/forgot-password",
                                 "/update-password",
