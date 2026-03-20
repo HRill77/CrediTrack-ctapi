@@ -16,4 +16,6 @@ server:
 
 application:
   id: crediTrack_dev
- 
+
+gateway:
+  url: http://localhost:3000

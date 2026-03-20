@@ -1,0 +1,68 @@
+spring:
+  
+  mvc:
+    async:
+      request-timeout: 7200000
+
+
+  application:
+    name: Credit Track Application
+
+  datasource:
+    url: jdbc:mariadb://hopper.proxy.rlwy.net:43809/credit_track_db
+    username: root
+    password: yoMQxMwoFQZOUCTOPNzrvWPnSBivnZzv
+    driver-class-name: org.mariadb.jdbc.Driver
+
+    hikari:
+      connection-timeout: 120000
+      idle-timeout: 120000
+      connection-test-query: SELECT 1
+      validation-timeout: 120000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      initialization-fail-timeout: 0
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MariaDBDialect
+        jdbc:
+          time_zone: Asia/Manila
+        batch_size: 50
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+        lob:
+          non_contextual_creation: true
+
+server:
+  port: ${PORT:8080}
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,text/css,text/javascript,application/javascript
+
+logging:
+  level:
+    root: INFO
+    org.springframework: ERROR
+    org.hibernate.SQL: OFF
+
+gateway:
+  url: https://creditrack.onrender.com
+
+management:
+  endpoint:
+    health:
+      show-details: always
+
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+  health:
+    db:
+      enabled: false

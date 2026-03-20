@@ -3,7 +3,6 @@ package com.cta.creditrack.services;
 import com.cta.creditrack.dtos.TranscriptDto;
 import com.cta.creditrack.dtos.VisionWordDto;
 import com.cta.creditrack.layouts.UniversityLayout;
-import com.cta.creditrack.layouts.UniversityLayoutRegistry;
 import com.cta.creditrack.layouts.UniversityLayoutRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -12,7 +11,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.util.*;
-import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,43 +19,56 @@ public class TranscriptService {
 
     private final OcrService ocrService;
     private final OcrCorrectionService correctionService;
-    // private final UniversityLayoutRegistry layoutRegistry;
     private final UniversityLayoutRepository layoutRepository;
 
-    public List<TranscriptDto> processTranscript(
-            List<MultipartFile> files,
-            String studentEmail) throws Exception {
+    //  public String processTranscript2(List<MultipartFile> files) throws Exception {
+
+    //     String allText = "";
+    //     for (MultipartFile file : files) {
+    //         if (file.isEmpty())
+    //             continue;
+
+    //         File temp = File.createTempFile("transcript", ".jpg");
+    //         file.transferTo(temp);
+
+    //         try {
+    //             String words = ocrService.extractWords2(temp);
+
+    //             // System.out.println("========== OCR WORDS START ==========");
+    //             // for (VisionWordDto w : words) {
+    //             //     System.out.println("Text: " + w.getText() + " | X: " + w.getX() + " | Y: " + w.getY());
+    //             // }
+    //             // System.out.println("========== OCR WORDS END ==========");
+
+    //             allText += words;
+    //         } finally {
+    //             temp.delete();
+    //         }
+    //     }
+
+    //     return allText;
+    // }
+
+    public List<TranscriptDto> processTranscript(List<MultipartFile> files) throws Exception {
 
         List<TranscriptDto> allResults = new ArrayList<>();
 
         for (MultipartFile file : files) {
-            if (file.isEmpty()) {
+            if (file.isEmpty())
                 continue;
-            }
 
-            String contentType = file.getContentType();
-            if ("application/pdf".equals(contentType)) {
-                throw new IllegalArgumentException("PDF files are not allowed. Please upload JPG or PNG images only.");
-            }
-
-            String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null && originalFilename.contains(".")
-                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                    : ".jpg";
-            File temp = File.createTempFile("transcript", extension);
+            File temp = File.createTempFile("transcript", ".jpg");
             file.transferTo(temp);
 
             try {
                 List<VisionWordDto> words = ocrService.extractWords(temp);
-                // ===== PRINT OCR WORDS =====
-                System.out.println("========== OCR WORDS START ==========");
-                for (VisionWordDto w : words) {
-                    System.out.println(
-                            "Text: " + w.getText() +
-                                    " | X: " + w.getX() +
-                                    " | Y: " + w.getY());
-                }
-                System.out.println("========== OCR WORDS END ==========");
+
+                // System.out.println("========== OCR WORDS START ==========");
+                // for (VisionWordDto w : words) {
+                //     System.out.println("Text: " + w.getText() + " | X: " + w.getX() + " | Y: " + w.getY());
+                // }
+                // System.out.println("========== OCR WORDS END ==========");
+
                 List<TranscriptDto> results = parse(words);
                 allResults.addAll(results);
             } finally {
@@ -70,7 +81,7 @@ public class TranscriptService {
 
     /*
      * ==============================
-     * MAIN AI PARSER ENTRY
+     * MAIN PARSER ENTRY
      * ==============================
      */
 
@@ -84,17 +95,27 @@ public class TranscriptService {
                 .collect(Collectors.toList());
 
         String university = detectUniversity(words);
+        System.out.println("Detected university: " + university);
 
         Optional<UniversityLayout> templateOpt = layoutRepository.findByUniversityCode(university);
 
         List<List<VisionWordDto>> rows = groupRows(words);
 
         if (templateOpt.isPresent()) {
-            return parseUsingTemplate(rows, templateOpt.get());
+            UniversityLayout layout = templateOpt.get();
+            System.out.println("Using template for: " + university);
+            System.out.println("Layout: subjectX=" + layout.getSubjectMinX() + "-" + layout.getSubjectMaxX()
+                    + " titleX=" + layout.getTitleMinX() + "-" + layout.getTitleMaxX()
+                    + " gradeX=" + layout.getGradeMinX() + "-" + layout.getGradeMaxX()
+                    + " creditX=" + layout.getCreditMinX() + "-" + layout.getCreditMaxX());
+            return parseUsingTemplate(rows, layout);
         }
 
-        // AI fallback
+        System.out.println("No template found, using AI layout detection.");
         LayoutModel aiLayout = detectLayout(words);
+        System.out.println("AI Layout: subjectX=" + aiLayout.subjectX
+                + " gradeX=" + aiLayout.gradeX
+                + " creditX=" + aiLayout.creditX);
 
         if (!university.equals("UNKNOWN")) {
             autoTrainLayout(university, aiLayout);
@@ -102,6 +123,12 @@ public class TranscriptService {
 
         return parseRows(rows, aiLayout);
     }
+
+    /*
+     * ==============================
+     * TEMPLATE-BASED PARSER
+     * ==============================
+     */
 
     private List<TranscriptDto> parseUsingTemplate(
             List<List<VisionWordDto>> rows,
@@ -135,45 +162,76 @@ public class TranscriptService {
                 String text = w.getText();
                 int x = w.getX();
 
-                if (x >= layout.getSubjectMinX() &&
-                        x <= layout.getSubjectMaxX() &&
-                        text.matches("[A-Z]{2,5}") &&
-                        i + 1 < row.size() &&
-                        row.get(i + 1).getText().matches("\\d{1,4}")) {
+                // SUBJECT - build multi-word subject code (e.g. "PROF ED 11", "SEE 13", "GEN ED
+                // 3")
+                if (subject == null &&
+                        x >= layout.getSubjectMinX() &&
+                        x <= layout.getSubjectMaxX()) {
 
-                    subject = text + " " + row.get(i + 1).getText();
-                    i++;
+                    StringBuilder subjectBuilder = new StringBuilder(text);
+                    int j = i + 1;
+
+                    while (j < row.size()) {
+                        VisionWordDto next = row.get(j);
+                        String nextText = next.getText();
+                        int nextX = next.getX();
+
+                        // Stop if we've gone past the subject zone
+                        if (nextX > layout.getSubjectMaxX() + 50)
+                            break;
+
+                        // Stop if we've reached the title zone
+                        if (nextX >= layout.getTitleMinX())
+                            break;
+
+                        subjectBuilder.append(" ").append(nextText);
+                        j++;
+
+                        // Stop after appending a number suffix (e.g. "11", "3")
+                        if (nextText.matches("\\d{1,4}"))
+                            break;
+                    }
+
+                    String candidate = subjectBuilder.toString().trim();
+
+                    // Valid subject: starts with letters, ends with a number
+                    if (candidate.matches("[A-Z].*\\d+")) {
+                        subject = candidate;
+                        i = j - 1;
+                    }
                     continue;
                 }
 
-                if (x >= layout.getTitleMinX() &&
+                // TITLE - words in the middle columns
+                if (subject != null && grade == null &&
+                        x >= layout.getTitleMinX() &&
                         x <= layout.getTitleMaxX()) {
-
-                    if (subject != null && grade == null)
-                        title.append(text).append(" ");
+                    title.append(text).append(" ");
                 }
 
+                // GRADE
                 if (x >= layout.getGradeMinX() &&
-                        x <= layout.getGradeMaxX()) {
-
-                    if (text.matches("\\d+(\\.\\d+)?"))
-                        grade = text;
+                        x <= layout.getGradeMaxX() &&
+                        text.matches("\\d+(\\.\\d+)?")) {
+                    grade = text;
                 }
 
+                // CREDITS
                 if (x >= layout.getCreditMinX() &&
-                        x <= layout.getCreditMaxX()) {
-
-                    if (text.matches("\\d{1,2}"))
-                        credits = Integer.parseInt(text);
+                        x <= layout.getCreditMaxX() &&
+                        text.matches("\\(?(\\d{1,2})\\)?")) {
+                    String digits = text.replaceAll("[^0-9]", "");
+                    try {
+                        int val = Integer.parseInt(digits);
+                        if (val < 12)
+                            credits = val;
+                    } catch (NumberFormatException e) {
+                        /* skip */ }
                 }
             }
 
             if (subject != null && grade != null) {
-                double confidence = calculateConfidence(
-                        subject,
-                        title.toString().trim(),
-                        grade,
-                        credits);
+                double confidence = calculateConfidence(subject, title.toString().trim(), grade, credits);
                 if (confidence >= 0.6) {
                     results.add(new TranscriptDto(
                             currentYear,
@@ -183,21 +241,15 @@ public class TranscriptService {
                             credits,
                             confidence));
                 }
-
             }
         }
 
         return removeDuplicates(results);
     }
 
-    private VisionWordDto normalize(VisionWordDto w) {
-        w.setText(correctionService.cleanToken(w.getText()));
-        return w;
-    }
-
     /*
      * ==============================
-     * AI COLUMN DETECTION
+     * AI LAYOUT DETECTION
      * ==============================
      */
 
@@ -208,24 +260,18 @@ public class TranscriptService {
         List<Integer> creditXs = new ArrayList<>();
 
         for (VisionWordDto w : words) {
-
             String text = w.getText();
 
-            // Match various subject code patterns (2-10 chars with letters, numbers,
-            // hyphens)
             if (text.matches("[A-Z][A-Z0-9\\-]{1,9}") && text.length() >= 2)
                 subjectXs.add(w.getX());
 
-            // Match grades (1.00, 1.25, 2.00, etc. or just integers like 86, 90)
             if (text.matches("\\d+\\.\\d{2}") || text.matches("\\d{2}"))
                 gradeXs.add(w.getX());
 
-            // Match credits (integer 1-2 digits, sometimes in parentheses)
             if (text.matches("\\d{1,2}") || text.matches("\\(?\\d{1,2}\\)?"))
                 creditXs.add(w.getX());
         }
 
-        // Default fallback coordinates if patterns not found
         int subjectX = subjectXs.isEmpty() ? 100 : percentile(subjectXs, 30);
         int gradeX = gradeXs.isEmpty() ? 1900 : percentile(gradeXs, 80);
         int creditX = creditXs.isEmpty() ? 2600 : percentile(creditXs, 90);
@@ -239,9 +285,10 @@ public class TranscriptService {
         Collections.sort(list);
         return list.get(list.size() * percent / 100);
     }
+
     /*
      * ==============================
-     * SMART ROW GROUPING
+     * ROW GROUPING
      * ==============================
      */
 
@@ -251,9 +298,7 @@ public class TranscriptService {
         int tolerance = calculateTolerance(words);
 
         for (VisionWordDto word : words) {
-
             boolean added = false;
-
             for (List<VisionWordDto> row : rows) {
                 if (Math.abs(row.get(0).getY() - word.getY()) < tolerance) {
                     row.add(word);
@@ -261,7 +306,6 @@ public class TranscriptService {
                     break;
                 }
             }
-
             if (!added) {
                 List<VisionWordDto> newRow = new ArrayList<>();
                 newRow.add(word);
@@ -275,7 +319,6 @@ public class TranscriptService {
     private int calculateTolerance(List<VisionWordDto> words) {
 
         List<Integer> diffs = new ArrayList<>();
-
         for (int i = 1; i < words.size(); i++) {
             int diff = Math.abs(words.get(i).getY() - words.get(i - 1).getY());
             if (diff > 0 && diff < 100)
@@ -284,14 +327,13 @@ public class TranscriptService {
 
         if (diffs.isEmpty())
             return 15;
-
         Collections.sort(diffs);
         return Math.max(15, diffs.get(diffs.size() / 2));
     }
 
     /*
      * ==============================
-     * ROW PARSING ENGINE
+     * AI FALLBACK ROW PARSER
      * ==============================
      */
 
@@ -321,105 +363,96 @@ public class TranscriptService {
             String grade = null;
             Integer credits = 0;
 
-            // First pass: find grade and credits from right side of row
+            // First pass: find grade and credits
             for (VisionWordDto w : row) {
                 String text = w.getText();
                 int x = w.getX();
 
-                // GRADE - Match decimal grades (1.00, 2.25) or whole grades (86, 90, PASSED)
                 if (grade == null &&
                         Math.abs(x - layout.gradeX) < 150 &&
                         (text.matches("\\d+\\.\\d{2}") ||
                                 text.matches("\\d{2}(?!\\d{2})") ||
                                 text.equals("PASSED"))) {
-
                     grade = text;
                 }
 
-                // CREDITS - Match 1-2 digit numbers (but not year components)
                 if (Math.abs(x - layout.creditX) < 180 &&
                         text.matches("\\d{1,2}") &&
                         !text.equals("00")) {
-
                     try {
                         int creditVal = Integer.parseInt(text);
-                        if (creditVal < 12) { // reasonable credit range
+                        if (creditVal < 12)
                             credits = creditVal;
-                        }
                     } catch (NumberFormatException e) {
-                        // skip
-                    }
+                        /* skip */ }
                 }
             }
 
-            // Second pass: find subject code (leftmost) and title
-            // Only process if we found a grade
+            // Second pass: find subject and title (only if grade found)
             if (grade != null) {
                 boolean foundSubject = false;
 
-                for (VisionWordDto w : row) {
+                for (int i = 0; i < row.size(); i++) {
+                    VisionWordDto w = row.get(i);
                     String text = w.getText();
                     int x = w.getX();
 
-                    // SUBJECT - leftmost code that looks like a subject code
                     if (!foundSubject &&
                             x < layout.gradeX - 100 &&
                             text.length() >= 2 && text.length() <= 10 &&
                             text.matches("[A-Z][A-Z0-9\\-]*") &&
-                            !text.matches(".*[0-9]{4}.*") &&
                             !isCommonWord(text)) {
 
-                        subject = text;
-                        foundSubject = true;
-                    }
-                    // TITLE - text in middle columns
-                    else if (foundSubject &&
+                        // Build multi-word subject code
+                        StringBuilder subjectBuilder = new StringBuilder(text);
+                        int j = i + 1;
+
+                        while (j < row.size()) {
+                            VisionWordDto next = row.get(j);
+                            String nextText = next.getText();
+                            int nextX = next.getX();
+
+                            if (nextX >= layout.gradeX - 100)
+                                break;
+
+                            subjectBuilder.append(" ").append(nextText);
+                            j++;
+
+                            if (nextText.matches("\\d{1,4}"))
+                                break;
+                        }
+
+                        String candidate = subjectBuilder.toString().trim();
+                        if (candidate.matches("[A-Z].*\\d+")) {
+                            subject = candidate;
+                            i = j - 1;
+                            foundSubject = true;
+                        }
+
+                    } else if (foundSubject &&
                             x > layout.subjectX + 50 &&
                             x < layout.gradeX - 70 &&
-                            !text.equals(subject) &&
-                            !text.matches(".*[0-9]{4}.*") &&
                             !isCommonWord(text)) {
-
                         title.append(text).append(" ");
                     }
                 }
             }
 
             if (subject != null && grade != null) {
-
-                double confidence = calculateConfidence(
-                        subject,
-                        title.toString().trim(),
-                        grade,
-                        credits);
-
-                if (confidence >= 0.5) { // lowered threshold for better coverage
-
-                    TranscriptDto dto = new TranscriptDto(
+                double confidence = calculateConfidence(subject, title.toString().trim(), grade, credits);
+                if (confidence >= 0.5) {
+                    results.add(new TranscriptDto(
                             currentYear,
                             subject,
                             title.toString().trim(),
                             formatGrade(grade),
                             credits,
-                            confidence);
-
-                    results.add(dto);
+                            confidence));
                 }
             }
-
         }
 
         return removeDuplicates(results);
-    }
-
-    private boolean isCommonWord(String text) {
-        // Filter out common words that aren't subject codes
-        Set<String> commonWords = new HashSet<>(Arrays.asList(
-                "COURSE", "CODE", "DESCRIPTION", "TITLE", "SUBJECT",
-                "FINAL", "GRADE", "CREDITS", "RE", "EXAM", "UNITS",
-                "TERM", "SEM", "SEMESTER", "FOR", "OF", "AND", "THE",
-                "IN", "WITH", "ON", "AT", "TO", "OR", "BY", "A", "AS"));
-        return commonWords.contains(text);
     }
 
     /*
@@ -428,8 +461,12 @@ public class TranscriptService {
      * ==============================
      */
 
-    private boolean isGarbage(String line) {
+    private VisionWordDto normalize(VisionWordDto w) {
+        w.setText(correctionService.cleanToken(w.getText()));
+        return w;
+    }
 
+    private boolean isGarbage(String line) {
         return line.contains("GRADING")
                 || line.contains("OFFICIAL")
                 || line.contains("REGISTRAR")
@@ -443,20 +480,14 @@ public class TranscriptService {
 
     private String extractYear(String line) {
 
-        // Try to match year ranges like "2021-2022"
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(20\\d{2})[\\s\\-](20\\d{2})")
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("(20\\d{2})[\\s\\-](20\\d{2})")
                 .matcher(line);
 
-        if (m.find()) {
-            String year1 = m.group(1);
-            String year2 = m.group(2);
-            return year1 + "-" + year2;
-        }
+        if (m.find())
+            return m.group(1) + "-" + m.group(2);
 
-        // Try to match single year "2023"
-        m = java.util.regex.Pattern.compile("(20\\d{2})")
-                .matcher(line);
-
+        m = java.util.regex.Pattern.compile("(20\\d{2})").matcher(line);
         if (m.find())
             return m.group(1);
 
@@ -464,22 +495,25 @@ public class TranscriptService {
     }
 
     private String formatGrade(String grade) {
-
         if (!grade.matches("\\d+(\\.\\d+)?"))
             return grade;
-
-        double val = Double.parseDouble(grade);
-        return String.format("%.2f", val);
+        return String.format("%.2f", Double.parseDouble(grade));
     }
 
     private String join(List<VisionWordDto> row) {
-        return row.stream()
-                .map(VisionWordDto::getText)
-                .collect(Collectors.joining(" "));
+        return row.stream().map(VisionWordDto::getText).collect(Collectors.joining(" "));
+    }
+
+    private boolean isCommonWord(String text) {
+        Set<String> commonWords = new HashSet<>(Arrays.asList(
+                "COURSE", "CODE", "DESCRIPTION", "TITLE", "SUBJECT",
+                "FINAL", "GRADE", "CREDITS", "RE", "EXAM", "UNITS",
+                "TERM", "SEM", "SEMESTER", "FOR", "OF", "AND", "THE",
+                "IN", "WITH", "ON", "AT", "TO", "OR", "BY", "A", "AS"));
+        return commonWords.contains(text);
     }
 
     private List<TranscriptDto> removeDuplicates(List<TranscriptDto> list) {
-
         return list.stream()
                 .collect(Collectors.collectingAndThen(
                         Collectors.toMap(
@@ -487,6 +521,63 @@ public class TranscriptService {
                                 r -> r,
                                 (r1, r2) -> r1),
                         m -> new ArrayList<>(m.values())));
+    }
+
+    private double calculateConfidence(String subject, String title, String grade, Integer credits) {
+        double score = 0;
+        if (subject != null && subject.matches("[A-Z][A-Z0-9\\-]{1,9}"))
+            score += 0.3;
+        if (title != null && !title.isEmpty())
+            score += 0.25;
+        if (grade != null && (grade.matches("\\d+\\.\\d{2}") || grade.matches("\\d{2}") || grade.equals("PASSED")))
+            score += 0.35;
+        if (credits != null && credits > 0)
+            score += 0.1;
+        return score;
+    }
+
+    /*
+     * ==============================
+     * UNIVERSITY DETECTION
+     * ==============================
+     */
+
+    private String detectUniversity(List<VisionWordDto> words) {
+
+        String text = words.stream()
+                .map(VisionWordDto::getText)
+                .collect(Collectors.joining(" "))
+                .toUpperCase();
+
+        if (text.contains("NUEVA ECIJA UNIVERSITY"))
+            return "NEUST";
+        if (text.contains("ARAULLO UNIVERSITY"))
+            return "ARAULLO";
+        if (text.contains("MIDWAY COLLEGES"))
+            return "MIDWAY";
+        if (text.contains("IMMACULATE CONCEPTION"))
+            return "CIC";
+
+        System.out.println("University detection failed. OCR Text: " + text);
+        return "UNKNOWN";
+    }
+
+    private void autoTrainLayout(String universityCode, LayoutModel aiLayout) {
+
+        if (layoutRepository.findByUniversityCode(universityCode).isPresent())
+            return;
+
+        UniversityLayout entity = new UniversityLayout();
+        entity.setUniversityCode(universityCode);
+        entity.setSubjectMinX(aiLayout.subjectX - 120);
+        entity.setSubjectMaxX(aiLayout.subjectX + 120);
+        entity.setTitleMinX(aiLayout.subjectX + 120);
+        entity.setTitleMaxX(aiLayout.gradeX - 120);
+        entity.setGradeMinX(aiLayout.gradeX - 120);
+        entity.setGradeMaxX(aiLayout.gradeX + 120);
+        entity.setCreditMinX(aiLayout.creditX - 120);
+        entity.setCreditMaxX(aiLayout.creditX + 120);
+        layoutRepository.save(entity);
     }
 
     /*
@@ -506,81 +597,4 @@ public class TranscriptService {
             this.creditX = creditX;
         }
     }
-
-    private String detectUniversity(List<VisionWordDto> words) {
-
-        String text = words.stream()
-                .map(VisionWordDto::getText)
-                .collect(Collectors.joining(" "))
-                .toUpperCase();
-
-        if (text.contains("NUEVA ECIJA UNIVERSITY"))
-            return "NEUST";
-
-        if (text.contains("ARAULLO UNIVERSITY"))
-            return "ARAULLO";
-
-        if (text.contains("MIDWAY COLLEGES"))
-            return "MIDWAY";
-
-        System.out.println("University detection failed, defaulting to UNKNOWN. OCR Text: " + text);
-
-        if (text.contains("IMMACULATE CONCEPTION"))
-            return "CIC";
-
-        return "UNKNOWN";
-    }
-
-    private void autoTrainLayout(String universityCode, LayoutModel aiLayout) {
-
-        if (layoutRepository.findByUniversityCode(universityCode).isPresent()) {
-            return; // already trained
-        }
-
-        UniversityLayout entity = new UniversityLayout();
-
-        entity.setUniversityCode(universityCode);
-
-        entity.setSubjectMinX(aiLayout.subjectX - 120);
-        entity.setSubjectMaxX(aiLayout.subjectX + 120);
-
-        entity.setTitleMinX(aiLayout.subjectX + 120);
-        entity.setTitleMaxX(aiLayout.gradeX - 120);
-
-        entity.setGradeMinX(aiLayout.gradeX - 120);
-        entity.setGradeMaxX(aiLayout.gradeX + 120);
-
-        entity.setCreditMinX(aiLayout.creditX - 120);
-        entity.setCreditMaxX(aiLayout.creditX + 120);
-
-        layoutRepository.save(entity);
-    }
-
-    private double calculateConfidence(
-            String subject,
-            String title,
-            String grade,
-            Integer credits) {
-
-        double score = 0;
-
-        // Subject code quality (any valid code format gets credit)
-        if (subject != null && subject.matches("[A-Z][A-Z0-9\\-]{1,9}"))
-            score += 0.3;
-
-        // Title presence (even short titles count, as many courses have brief names)
-        if (title != null && !title.isEmpty())
-            score += 0.25;
-
-        // Grade presence (critical for course records)
-        if (grade != null && (grade.matches("\\d+\\.\\d{2}") || grade.matches("\\d{2}") || grade.equals("PASSED")))
-            score += 0.35;
-
-        // Credits presence (optional but good to have)
-        if (credits != null && credits > 0)
-            score += 0.1;
-
-        return score;
-    }
-
 }
