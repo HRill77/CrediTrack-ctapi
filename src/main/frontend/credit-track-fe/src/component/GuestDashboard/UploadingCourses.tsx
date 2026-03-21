@@ -265,6 +265,7 @@ const UploadingCourses: React.FC<UploadingCoursesProps> = ({
               <Box sx={{ maxHeight: 600, overflow: "auto" }}>
                 <TranscriptGrid
                   initialRows={gridData}
+                  isProcessed={gridData.length > 0}
                   onRowsChange={(updatedRows) => {
                     setGridData(updatedRows);
                     onTranscriptDataUpdate?.(updatedRows);

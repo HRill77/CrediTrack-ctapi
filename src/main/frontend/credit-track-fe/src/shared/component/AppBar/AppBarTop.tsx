@@ -55,7 +55,7 @@ const AppBarTop = ({
   className = "navigation-bar",
 }: AppBarTopProps) => {
   const { currentUser, logout } = useContext(AuthContext);
-  const isGuest = sessionStorage.getItem("isGuest") === "true";
+  const isGuest = localStorage.getItem("isGuest") === "true";
   const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
@@ -67,6 +67,7 @@ const AppBarTop = ({
       ?.label || "Student Guest";
   const isRoot = location.pathname === "/";
   const isDashboard = location.pathname.includes("/dashboard");
+  // const isStudentDashboard = location.pathname.includes("/student-dashboard");
 
   const MENU = {
     guest: {
@@ -102,7 +103,7 @@ const AppBarTop = ({
 
   const handleLogout = async () => {
     try {
-      isGuest ? sessionStorage.removeItem("isGuest") : await logout();
+      isGuest ? localStorage.removeItem("isGuest") : await logout();
       navigate("/");
     } catch (e) {
       console.error(e);
@@ -314,7 +315,7 @@ const AppBarTop = ({
                       handleCloseUserMenu();
                       if (menu === "Logout") setLogoutConfirmOpen(true);
                       else if (menu === "Main") navigate("/");
-                      else if (menu === "Dashboard") navigate("/dashboard");
+                      else if (menu === "Dashboard") navigate(isGuest ? "/student-dashboard" : "/dashboard");
                       else if (menu === "Account") navigate("/account");
                       else console.log("Clicked:", menu);
                     }}

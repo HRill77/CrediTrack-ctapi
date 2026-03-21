@@ -34,7 +34,7 @@ export const courseOptions = [
   },
   {
     label: "Bachelor of Science in Tourism Management Major in Mice Management",
-    value: "BSTM-MMM",
+    value: "BSTM-MM",
   },
   {
     label:
@@ -43,7 +43,7 @@ export const courseOptions = [
   },
   {
     label:
-      "Bachelor of Science in Tourism Management Major in Hotel and Restaurant Administration",
+      "Bachelor of Science in Hospitality Management Major in Hotel and Restaurant Administration",
     value: "BSTM-HRM",
   },
   {

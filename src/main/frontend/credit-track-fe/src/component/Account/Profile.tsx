@@ -298,7 +298,12 @@ const Profile: FC<{ admin: any; setAdmin: any }> = ({ admin, setAdmin }) => {
           <Box>
             <Typography sx={labelSx}>Work Position:</Typography>
             <TextField
-              value={getRoleLabel(draft?.authorities?.[0] || "")}
+              value={
+                getRoleLabel(draft?.authorities?.[0] || "") +
+                (draft?.programs?.length > 0
+                  ? ` - ${draft.programs.map((p: any) => p.code).join(", ")}`
+                  : "")
+              }
               disabled
               size="small"
               fullWidth

@@ -17,7 +17,7 @@ http.interceptors.response.use(
 
   (error) => {
     const isLoginPage = window.location.pathname === "/";
-    const isGuest = sessionStorage.getItem("isGuest") === "true";
+    const isGuest = localStorage.getItem("isGuest") === "true";
 
     if (isLoginPage) {
       return Promise.reject(error);
