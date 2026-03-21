@@ -35,6 +35,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import PrintIcon from "@mui/icons-material/Print";
 import EmailIcon from "@mui/icons-material/Email";
 import EditIcon from "@mui/icons-material/Edit";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -65,6 +66,7 @@ const EvaluationTable = () => {
   const [selectedStudentEvaluations, setSelectedStudentEvaluations] = useState<
     any[]
   >([]);
+
   const [selectedStudentInfo, setSelectedStudentInfo] = useState<any>(null);
   const [sendEmailModalOpen, setSendEmailModalOpen] = useState(false);
   const [selectedEmailId, setSelectedEmailId] = useState<number | "">("");
@@ -186,11 +188,12 @@ const EvaluationTable = () => {
     }));
   }, [filters.sortField, filters.sortDirection]);
 
-  const handleDownloadPDF = (studentId: string) => {
+  const buildPdfContent = (studentId: string) => {
     const studentData = fullStudentsData.find(
       (s) => String(s.studentId) === String(studentId),
     );
-    if (!studentData) return;
+    if (!studentData) return null;
+
     const doc = new jsPDF("landscape", "mm", "a4");
     const margin = 20;
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -398,9 +401,7 @@ const EvaluationTable = () => {
       `Units Credited: ${totalCredited}/${totalUnits}`,
       pageWidth - margin,
       footerBaseY,
-      {
-        align: "right",
-      },
+      { align: "right" },
     );
     doc.text(
       `Expected Year of Graduation: ${calculateGraduationYear()}`,
@@ -434,11 +435,26 @@ const EvaluationTable = () => {
       doc.text("Program Head", margin, footerBaseY + 12);
     }
 
+    return { doc, studentData };
+  };
+
+  const handleDownloadPDF = (studentId: string) => {
+    const result = buildPdfContent(studentId);
+    if (!result) return;
+    const { doc, studentData } = result;
     doc.save(
       `${studentData.lastName}, ${studentData.firstName} - Evaluation_Results.pdf`,
     );
     setSnackbarMessage("PDF downloaded successfully.");
     setSnackbarOpen(true);
+  };
+
+  const handlePrintPDF = (studentId: string) => {
+    const result = buildPdfContent(studentId);
+    if (!result) return;
+    const { doc } = result;
+    doc.autoPrint();
+    window.open(doc.output("bloburl"), "_blank");
   };
 
   const handleViewEdit = (studentId: string) => {
@@ -633,6 +649,20 @@ const EvaluationTable = () => {
               </MenuItem>
               <MenuItem
                 onClick={() => {
+                  handlePrintPDF(params.row.studentId);
+                  handleMenuClose();
+                }}
+                sx={{ display: "flex", gap: 1 }}
+              >
+                <PrintIcon
+                  sx={{ color: "rgba(6, 79, 30, 1)", fontSize: "20px" }}
+                />
+                <span style={{ fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)" }}>
+                  Print
+                </span>
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
                   handleViewEdit(params.row.studentId);
                   handleMenuClose();
                 }}
@@ -756,6 +786,7 @@ const EvaluationTable = () => {
           {/* SEARCH */}
           <Paper
             component="form"
+            onSubmit={(e) => e.preventDefault()}
             sx={{
               p: "2px 4px",
               display: "flex",

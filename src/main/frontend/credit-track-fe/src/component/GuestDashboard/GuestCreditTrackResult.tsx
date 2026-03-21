@@ -176,20 +176,18 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
 
   const graduationYear = calculateGraduationYear();
 
-  const handleDownloadPDF = () => {
+  const buildPdfDoc = () => {
     const doc = new jsPDF("landscape", "mm", "a4");
     const margin = 20;
     const pageWidth = doc.internal.pageSize.getWidth();
-    const maxWidth = pageWidth - margin * 2; // usable width
+    const maxWidth = pageWidth - margin * 2;
     let startY = margin;
 
-    // Title
     doc.setFontSize(14);
     doc.setTextColor(6, 79, 30);
     doc.text("CrediTrack Results", margin, startY);
     startY += 10;
 
-    // Student Info
     if (studentData) {
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
@@ -205,7 +203,6 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
       startY += 10;
     }
 
-    // Transfer Details — use splitTextToSize to wrap long lines
     if (transferData) {
       doc.setFontSize(12);
       doc.setTextColor(6, 79, 30);
@@ -226,7 +223,6 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
       startY += toLines.length * 5 + 6;
     }
 
-    // Table
     const tableRows: RowInput[] = [];
 
     displayData.forEach((section) => {
@@ -307,9 +303,20 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
       { align: "right" },
     );
 
+    return doc;
+  };
+
+  const handleDownloadPDF = () => {
+    const doc = buildPdfDoc();
     doc.save(
       `${studentData?.lastname}, ${studentData?.firstname} -CrediTrack_Results.pdf`,
     );
+  };
+
+  const handlePrint = () => {
+    const doc = buildPdfDoc();
+    doc.autoPrint();
+    window.open(doc.output("bloburl"), "_blank");
   };
 
   return (
@@ -384,6 +391,18 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
               }}
             >
               Download PDF
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handlePrint}
+              sx={{
+                backgroundColor: "#064F1E",
+                fontSize: "clamp(0.65rem, 1.8vw, 0.8rem)",
+                textTransform: "none",
+                "&:hover": { backgroundColor: "#053a16" },
+              }}
+            >
+              Print
             </Button>
             <Button
               variant="outlined"
