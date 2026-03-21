@@ -56,10 +56,6 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
   transferData,
   studentId,
 }) => {
-  /* ==============================
-     TRANSFORM DATA
-  ============================== */
-
   const invalidRemarks = [
     "Insufficient units",
     "Failed grade",
@@ -83,7 +79,6 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
     evalData.forEach((item) => {
       if (!item.curricula) return;
 
-      // ✅ Skip Summer semester entries
       const semesterRaw = item.curricula.semester || "";
       if (semesterRaw.toLowerCase().includes("summer")) return;
 
@@ -130,23 +125,18 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
 
     return sortedData;
   };
+
   const displayData: Section[] =
     evaluationData.length > 0
       ? transformEvaluationData(evaluationData)
       : CREDIT_TRACK_DATA;
-
-  /* ==============================
-     CALCULATIONS
-  ============================== */
 
   const calculateUnits = () => {
     let totalUnits = 0;
     let totalCredited = 0;
     displayData.forEach((section) => {
       section.courses.forEach((course) => {
-        if (course.units > 0) {
-          totalUnits += course.units;
-        }
+        if (course.units > 0) totalUnits += course.units;
         if (
           course.creditedUnits > 0 &&
           !invalidRemarks.includes(course.remarks)
@@ -186,22 +176,20 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
 
   const graduationYear = calculateGraduationYear();
 
-  /* ==============================
-     PDF GENERATOR
-  ============================== */
-
   const handleDownloadPDF = () => {
     const doc = new jsPDF("landscape", "mm", "a4");
     const margin = 20;
     const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
+    const maxWidth = pageWidth - margin * 2; // usable width
     let startY = margin;
 
+    // Title
     doc.setFontSize(14);
     doc.setTextColor(6, 79, 30);
     doc.text("CrediTrack Results", margin, startY);
     startY += 10;
 
+    // Student Info
     if (studentData) {
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
@@ -217,27 +205,28 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
       startY += 10;
     }
 
+    // Transfer Details — use splitTextToSize to wrap long lines
     if (transferData) {
       doc.setFontSize(12);
       doc.setTextColor(6, 79, 30);
       doc.text("Transfer Details", margin, startY);
       startY += 6;
+
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
-      doc.text(
-        `From: ${transferData.fromUniversity} - ${transferData.fromProgram} (${transferData.fromCollege})`,
-        margin,
-        startY,
-      );
-      startY += 6;
-      doc.text(
-        `To: ${transferData.toUniversity} - ${transferData.toProgram} (${transferData.toCollege})`,
-        margin,
-        startY,
-      );
-      startY += 10;
+
+      const fromText = `From: ${transferData.fromUniversity} - ${transferData.fromProgram} (${transferData.fromCollege})`;
+      const fromLines = doc.splitTextToSize(fromText, maxWidth);
+      doc.text(fromLines, margin, startY);
+      startY += fromLines.length * 5 + 2;
+
+      const toText = `To: ${transferData.toUniversity} - ${transferData.toProgram} (${transferData.toCollege})`;
+      const toLines = doc.splitTextToSize(toText, maxWidth);
+      doc.text(toLines, margin, startY);
+      startY += toLines.length * 5 + 6;
     }
 
+    // Table
     const tableRows: RowInput[] = [];
 
     displayData.forEach((section) => {
@@ -323,10 +312,6 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
     );
   };
 
-  /* ==============================
-     UI
-  ============================== */
-
   return (
     <Modal open={open} onClose={onClose}>
       <>
@@ -346,7 +331,6 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
             overflow: "hidden",
           }}
         >
-          {/* Scrollable content */}
           <Box sx={{ overflowY: "auto", p: { xs: 2, sm: 3, md: 4 }, flex: 1 }}>
             <Typography
               variant="h5"
@@ -377,7 +361,6 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
             </Box>
           </Box>
 
-          {/* Sticky footer buttons */}
           <Box
             sx={{
               px: { xs: 2, sm: 3, md: 4 },
