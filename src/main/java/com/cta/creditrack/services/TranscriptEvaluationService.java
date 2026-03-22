@@ -78,6 +78,17 @@ public class TranscriptEvaluationService {
 
             Map<Long, TranscriptEvaluationGroupedResponse> grouped = new LinkedHashMap<>();
 
+            List<Approvals> allApprovals = approvalsRepository.findByUserId(user.getId());
+            Map<Long, ApprovalsDTO> approvalsMap = allApprovals.stream()
+                    .collect(Collectors.toMap(
+                            a -> a.getStudent().getId(),
+                            a -> new ApprovalsDTO(
+                                    a.getId(),
+                                    a.getApprovedDate(),
+                                    a.getStudent().getId(),
+                                    a.getUser().getId()),
+                            (a, b) -> a));
+
             // Get user's program codes/names for filtering
             Long ids = user.getId();
             List<Object[]> userProgramDetailsOpt = programRepository.findProgramsByUserId(ids);
@@ -136,7 +147,7 @@ public class TranscriptEvaluationService {
                 }
 
                 ApprovalsDTO approvalsDTO = null;
-                approvalsDTO = getApprovalsDTOByStudentAndUser(studentId, user.getId());
+                approvalsDTO = approvalsMap.get(studentId);
                 grouped.putIfAbsent(studentId,
                         new TranscriptEvaluationGroupedResponse(
                                 studentId,
