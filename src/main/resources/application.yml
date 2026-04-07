@@ -2,7 +2,7 @@ spring:
   main:
     allow-bean-definition-overriding: true
   profiles:
-    active: dev #gagawin mo itong uat if may idedeploy ka ganito lang
+    active: uat #gagawin mo itong uat if may idedeploy ka ganito lang
   mvc:
     async:
       request-timeout: 720000
@@ -70,12 +70,6 @@ sendgrid:
 google:
   gemini:
     api-key: ${GEMINI_API_KEY}
-
-
-
-=======
-    api-key: AIzaSyBWe0F1xopoeE33UniOReMUhdH4qtDUlCM
-
 server:
   servlet:
     session:

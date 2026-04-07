@@ -3,7 +3,6 @@ package com.cta.creditrack.services;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.time.LocalDateTime;
 
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -23,7 +22,6 @@ import com.cta.creditrack.dtos.UpsertTranscriptEvaluationRequest;
 import com.cta.creditrack.dtos.UserProgramDetailsDto;
 import com.cta.creditrack.model.Approvals;
 import com.cta.creditrack.model.Curricula;
-import com.cta.creditrack.model.ManualCredit;
 import com.cta.creditrack.model.Program;
 import com.cta.creditrack.model.Student;
 import com.cta.creditrack.model.Transcript;
@@ -31,7 +29,6 @@ import com.cta.creditrack.model.TranscriptEvaluation;
 import com.cta.creditrack.model.User;
 import com.cta.creditrack.repository.ApprovalsRepository;
 import com.cta.creditrack.repository.CurriculaRepository;
-import com.cta.creditrack.repository.ManualCreditRepository;
 import com.cta.creditrack.repository.ProgramRepository;
 import com.cta.creditrack.repository.StudentRepository;
 import com.cta.creditrack.repository.TranscriptEvaluationRepository;
@@ -50,7 +47,6 @@ public class TranscriptEvaluationService {
     private final TranscriptRepository transcriptRepository;
     private final ApprovalsRepository approvalsRepository;
     private final ProgramRepository programRepository;
-    private final ManualCreditRepository manualCreditRepository;
 
     public Page<TranscriptEvaluationGroupedResponse> searchTranscriptEvaluations(
             TranscriptEvaluationSearchRequest request,
@@ -279,44 +275,6 @@ public class TranscriptEvaluationService {
             transcript.setGrade(item.grade());
 
             transcriptRepository.save(transcript);
-
-            // ==============================
-            // SAVE TO MANUAL CREDIT REFERENCE
-            // ==============================
-            if (Boolean.TRUE.equals(item.finalApproved()) && item.curriculaId() != null) {
-
-                Curricula curricula = curriculaRepository.findById(item.curriculaId())
-                        .orElse(null);
-
-                if (curricula != null) {
-                    Optional<ManualCredit> existing = manualCreditRepository
-                            .findByTranscriptCourseNameAndCurriculumCourseNameAndProgram(
-                                    transcript.getCourseName(),
-                                    curricula.getCourseTitle(),
-                                    curricula.getProgramTitle());
-
-                    if (existing.isPresent()) {
-                        // Increment match count if already exists
-                        ManualCredit ref = existing.get();
-                        ref.setMatchCount(ref.getMatchCount() + 1);
-                        manualCreditRepository.save(ref);
-                    } else {
-                        // Save new reference
-                        ManualCredit ref = new ManualCredit();
-                        ref.setTranscriptSubjectCode(transcript.getSubjectCode());
-                        ref.setTranscriptCourseName(transcript.getCourseName());
-                        ref.setTranscriptUnits(transcript.getCredits());
-                        ref.setCurriculumSubjectCode(curricula.getCourseCode());
-                        ref.setCurriculumCourseName(curricula.getCourseTitle());
-                        ref.setCurriculumUnits(curricula.getUnits());
-                        ref.setProgram(curricula.getProgramTitle());
-                        ref.setApprovedBy(user);
-                        ref.setApprovedAt(LocalDateTime.now());
-                        ref.setMatchCount(1);
-                        manualCreditRepository.save(ref);
-                    }
-                }
-            }
 
             // ===============================
             // EVALUATION (CREATE OR UPDATE)
