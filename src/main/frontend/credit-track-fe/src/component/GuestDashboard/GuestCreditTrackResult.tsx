@@ -74,45 +74,44 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
     const curriculaYearToAcademicYear: Record<string, string> = {};
     evalData.forEach((item) => {
       if (item.transcript?.year && item.curricula?.year) {
-        curriculaYearToAcademicYear[item.curricula.year] = item.transcript.year;
+        curriculaYearToAcademicYear[item.curricula.year] = item.transcript.year;  
       }
     });
 
     const grouped: Record<string, Section> = {};
 
     evalData.forEach((item) => {
-      if (!item.curricula) return;
+      const semesterRaw = item.curricula?.semester || "For Review";
 
-      // ✅ Skip Summer semester entries
-      const semesterRaw = item.curricula.semester || "";
       if (semesterRaw.toLowerCase().includes("summer")) return;
 
       const academicYear =
         item.transcript?.year ||
-        curriculaYearToAcademicYear[item.curricula.year] ||
-        item.curricula.year;
+        curriculaYearToAcademicYear[item.curricula?.year] ||
+        item.curricula?.year ||
+        "Unknown Year";
 
-      const semester = semesterRaw;
-      const key = `${academicYear}|${semester}`;
+      const key = `${academicYear}|${semesterRaw}`;
 
       if (!grouped[key]) {
         grouped[key] = {
           year: academicYear,
-          semester,
+          semester: semesterRaw,
           courses: [],
         };
       }
 
-      const isInvalid = invalidRemarks.includes(item.remarks);
-      const units = item.curricula?.units || 0;
+      
+
+      const units = item.curricula?.units || 0
 
       grouped[key].courses.push({
         subjectCode: item.transcript?.subjectCode || "N/A",
         courseName: item.transcript?.courseName || "N/A",
         units,
-        creditedUnits: item.finalApproved && !isInvalid ? units : 0,
+        creditedUnits:  item.transcript?.credits || 0,
         grade: item.transcript?.grade || "N/A",
-        remarks: item.remarks || "N/A",
+        remarks: item.remarks || "No equivalent course found",
         confidenceScore: Math.round(item.confidenceScore || 0),
       });
     });
@@ -149,7 +148,8 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
         }
         if (
           course.creditedUnits > 0 &&
-          !invalidRemarks.includes(course.remarks)
+          !invalidRemarks.includes(course.remarks) &&
+          course.confidenceScore > 75
         ) {
           totalCredited += course.creditedUnits;
         }
@@ -254,6 +254,7 @@ const GuestCreditTrackResult: React.FC<GuestCreditTrackResultProps> = ({
 
       section.courses.forEach((course) => {
         const isInvalid =
+          course.remarks === "No equivalent course found" ||
           course.remarks === "Insufficient units" ||
           course.remarks === "Failed grade" ||
           course.remarks === "Course mismatch";
