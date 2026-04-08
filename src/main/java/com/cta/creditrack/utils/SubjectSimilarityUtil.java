@@ -14,8 +14,10 @@ public class SubjectSimilarityUtil {
     private static final JaroWinklerSimilarity jaro = new JaroWinklerSimilarity();
     private static final CosineSimilarity cosine = new CosineSimilarity();
 
+   
     private static final Set<String> STOPWORDS = Set.of(
-            "and", "of", "the", "in", "on", "for", "to");
+            "and", "of", "the", "in", "on", "for", "to"
+    );
 
     public static double computeScore(
             String transcriptName,
@@ -23,9 +25,11 @@ public class SubjectSimilarityUtil {
             int transcriptCredits,
             int curriculumCredits) {
 
-        // APPLY normalization here
+        //  APPLY normalization here
         String normalizedA = normalizeAndSort(transcriptName);
         String normalizedB = normalizeAndSort(curriculumName);
+
+        
 
         double jaroScore = jaroSimilarity(normalizedA, normalizedB);
         double cosineScore = cosineSimilarity(normalizedA, normalizedB);
@@ -53,6 +57,30 @@ public class SubjectSimilarityUtil {
     }
 
     // SIMPLE STEMMER (generic)
+    private static String stemWord(String word) {
+        if (word.endsWith("s") && word.length() > 3) {
+            return word.substring(0, word.length() - 1);
+        }
+        return word;
+    }
+
+    // NORMALIZATION (dynamic)
+    private static String normalizeAndSort(String text) {
+        if (text == null) return "";
+
+        return Arrays.stream(
+                text.toLowerCase()
+                    .replaceAll("[^a-z0-9\\s]", "") // remove punctuation
+                    .replaceAll("\\b(\\w+)'s\\b", "$1") // remove possessive
+                    .split("\\s+")
+            )
+            .map(SubjectSimilarityUtil::stemWord) // normalize plurals
+            .filter(word -> !STOPWORDS.contains(word)) // remove stopwords
+            .sorted() // ignore word order
+            .collect(Collectors.joining(" "));
+    }
+
+    //  SIMPLE STEMMER (generic)
     private static String stemWord(String word) {
         if (word.endsWith("s") && word.length() > 3) {
             return word.substring(0, word.length() - 1);

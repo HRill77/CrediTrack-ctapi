@@ -22,6 +22,7 @@ import com.cta.creditrack.dtos.UpsertTranscriptEvaluationRequest;
 import com.cta.creditrack.dtos.UserProgramDetailsDto;
 import com.cta.creditrack.model.Approvals;
 import com.cta.creditrack.model.Curricula;
+import com.cta.creditrack.model.ManualCredit;
 import com.cta.creditrack.model.Program;
 import com.cta.creditrack.model.Student;
 import com.cta.creditrack.model.Transcript;
@@ -29,6 +30,7 @@ import com.cta.creditrack.model.TranscriptEvaluation;
 import com.cta.creditrack.model.User;
 import com.cta.creditrack.repository.ApprovalsRepository;
 import com.cta.creditrack.repository.CurriculaRepository;
+import com.cta.creditrack.repository.ManualCreditRepository;
 import com.cta.creditrack.repository.ProgramRepository;
 import com.cta.creditrack.repository.StudentRepository;
 import com.cta.creditrack.repository.TranscriptEvaluationRepository;
@@ -47,6 +49,7 @@ public class TranscriptEvaluationService {
     private final TranscriptRepository transcriptRepository;
     private final ApprovalsRepository approvalsRepository;
     private final ProgramRepository programRepository;
+    private final ManualCreditRepository manualCreditRepository;
 
     public Page<TranscriptEvaluationGroupedResponse> searchTranscriptEvaluations(
             TranscriptEvaluationSearchRequest request,
@@ -121,8 +124,9 @@ public class TranscriptEvaluationService {
                 // Filter based on user's assigned programs
                 String studentToProgram = (String) row[37];
 
-                log.info("Evaluating student {} with program {} against user programs {}", studentId, studentToProgram,
-                        userProgramNames);
+                // log.info("Evaluating student {} with program {} against user programs {}",
+                // studentId, studentToProgram,
+                // userProgramNames);
 
                 if (studentToProgram == null) {
                     continue;
@@ -300,6 +304,38 @@ public class TranscriptEvaluationService {
             evaluation.setFinalApproved(item.finalApproved());
 
             repository.save(evaluation);
+
+            if ("Edited".equals(evaluation.getRemarks())) {
+                Optional<Curricula> curriculaOpt = curriculaRepository.findById(item.curriculaId());
+                curriculaOpt.ifPresent(curricula -> {
+
+                    Optional<ManualCredit> manualCreditOpt = manualCreditRepository
+                            .findByTranscriptSubjectCodeAndTranscriptCourseNameAndTranscriptUnitsAndProgram(
+                                    item.subjectCode(),
+                                    item.courseName(),
+                                    item.units(),
+                                    curricula.getProgramTitle());
+                    if (manualCreditOpt.isEmpty()) {
+                        ManualCredit manualCredit = new ManualCredit();
+                        manualCredit.setTranscriptCourseName(item.courseName());
+                        manualCredit.setTranscriptSubjectCode(item.subjectCode());
+                        manualCredit.setTranscriptUnits(item.units());
+                        manualCredit.setCurriculumCourseName(curricula.getCourseTitle());
+                        manualCredit.setCurriculumSubjectCode(curricula.getCourseCode());
+                        manualCredit.setProgram(curricula.getProgramTitle());
+                        manualCredit.setCurriculumUnits(curricula.getUnits());
+                        manualCreditRepository.save(manualCredit);
+                    } else {
+                        ManualCredit existing = manualCreditOpt.get();
+                        existing.setCurriculumCourseName(curricula.getCourseTitle());
+                        existing.setCurriculumSubjectCode(curricula.getCourseCode());
+                        existing.setProgram(curricula.getProgramTitle());
+                        existing.setCurriculumUnits(curricula.getUnits());
+                        manualCreditRepository.save(existing);
+                    }
+                });
+
+            }
 
             // Check if approval already exists for student and user
             if (approvalsRepository.existsByStudentIdAndUserId(student.getId(), user.getId())) {

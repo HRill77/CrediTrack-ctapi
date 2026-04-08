@@ -29,8 +29,6 @@ public class PdfGeneratorService {
 
         private final TranscriptEvaluationService evaluationService;
 
-        private static final float MARGIN = 72f;
-
         public byte[] generateEvaluationPdf(Long studentId, User programHead) {
 
                 try {
@@ -39,42 +37,66 @@ public class PdfGeneratorService {
                         PdfWriter writer = new PdfWriter(out);
                         PdfDocument pdf = new PdfDocument(writer);
                         Document document = new Document(pdf, PageSize.A4.rotate());
-                        document.setMargins(MARGIN, MARGIN, MARGIN, MARGIN);
+                        document.setMargins(20, 20, 20, 20);
 
                         TranscriptEvaluationGroupedResponse data = evaluationService.getEvaluationByStudentId(studentId,
                                         programHead);
 
                         // ===============================
-                        // HEADER - wrapped in table to force text wrap
+                        // HEADER
                         // ===============================
-                        document.add(textRow("CrediTrack Evaluation Results", 14, true,
-                                        new DeviceRgb(6, 79, 30)));
-                        document.add(spacer());
-                        document.add(textRow("Name: " + safe(data.lastName()) + ", " +
-                                        safe(data.firstName()) + " " + safe(data.middleName()), 10, false, null));
-                        document.add(textRow("Email: " + safe(data.email()), 10, false, null));
-                        document.add(textRow("Year Level: " + safe(data.yearLevel()), 10, false, null));
-                        document.add(spacer());
+                        document.add(new Paragraph("CrediTrack Evaluation Results")
+                                        .setBold()
+                                        .setFontSize(14)
+                                        .setFontColor(new DeviceRgb(6, 79, 30))
+                                        .setMultipliedLeading(1));
 
+                        document.add(new Paragraph(
+                                        "Name: " + safe(data.lastName()) + ", " +
+                                                        safe(data.firstName()) + " " +
+                                                        safe(data.middleName()))
+                                        .setFontSize(10)
+                                        .setMultipliedLeading(1));
+
+                        document.add(new Paragraph("Email: " + safe(data.email()))
+                                        .setFontSize(10)
+                                        .setMultipliedLeading(1));
+
+                        document.add(new Paragraph("Year Level: " + safe(data.yearLevel()))
+                                        .setFontSize(10)
+                                        .setMultipliedLeading(1));
+
+                        document.add(new Paragraph(" ").setFontSize(6));
                         // ===============================
                         // TRANSFER DETAILS
                         // ===============================
-                        document.add(textRow("Transfer Details", 14, true,
-                                        new DeviceRgb(6, 79, 30)));
-                        document.add(spacer());
-                        document.add(textRow("From: " + safe(data.fromUniversity()) +
-                                        " - " + safe(data.fromProgram()), 9, false, null));
-                        document.add(textRow("To: " + safe(data.toUniversity()) +
-                                        " - " + safe(data.toProgram()), 9, false, null));
-                        document.add(spacer());
+                        document.add(new Paragraph("Transfer Details")
+                                        .setBold()
+                                        .setFontSize(14)
+                                        .setFontColor(new DeviceRgb(6, 79, 30))
+                                        .setMultipliedLeading(1));
+
+                        document.add(new Paragraph("From: " +
+                                        safe(data.fromUniversity()) + " - " +
+                                        safe(data.fromProgram()))
+                                        .setFontSize(10)
+                                        .setMultipliedLeading(1));
+
+                        document.add(new Paragraph("To: " +
+                                        safe(data.toUniversity()) + " - " +
+                                        safe(data.toProgram()))
+                                        .setFontSize(10)
+                                        .setMultipliedLeading(1));
+
+                        document.add(new Paragraph(" "));
 
                         // ===============================
                         // TABLE
                         // ===============================
+
                         Table table = new Table(UnitValue.createPercentArray(
                                         new float[] { 10, 25, 8, 8, 8, 25, 10 }))
-                                        .useAllAvailableWidth()
-                                        .setFixedLayout();
+                                        .useAllAvailableWidth();
 
                         addHeader(table, "Subject Code");
                         addHeader(table, "Course Name");
@@ -91,6 +113,7 @@ public class PdfGeneratorService {
 
                         for (Map.Entry<String, List<EvaluationItem>> entry : grouped.entrySet()) {
 
+                                // Section Header (like React)
                                 table.addCell(new Cell(1, 7)
                                                 .add(new Paragraph(entry.getKey())
                                                                 .setBold()
@@ -102,17 +125,29 @@ public class PdfGeneratorService {
 
                                 for (EvaluationItem e : entry.getValue()) {
 
-                                        int units = e.curricula().units() != null ? e.curricula().units() : 0;
-                                        totalUnits += units;
+                                        int units = (e.curricula() != null && e.curricula().units() != null)
+                                                        ? e.curricula().units()
+                                                        : (e.transcript().credits() != null ? e.transcript().credits()
+                                                                        : 0);
 
-                                        int credited = Boolean.TRUE.equals(e.finalApproved()) ? units : 0;
-                                        totalCredited += credited;
+                                        totalUnits += units;
 
                                         boolean isInvalid = "Insufficient units".equalsIgnoreCase(e.remarks()) ||
                                                         "Failed grade".equalsIgnoreCase(e.remarks()) ||
-                                                        "Course mismatch".equalsIgnoreCase(e.remarks());
+                                                        "Course mismatch".equalsIgnoreCase(e.remarks()) ||
+                                                        "Low similarity".equalsIgnoreCase(e.remarks()) ||
+                                                        "NO_MATCH".equalsIgnoreCase(e.evaluationStatus()) ||
+                                                        "No equivalent course found".equalsIgnoreCase(e.remarks());
 
-                                        Color textColor = isInvalid ? ColorConstants.RED : ColorConstants.BLACK;
+                                        int credited = (!isInvalid && Boolean.TRUE.equals(e.finalApproved()))
+                                                        ? units
+                                                        : 0;
+
+                                        totalCredited += credited;
+
+                                        Color textColor = isInvalid
+                                                        ? ColorConstants.RED
+                                                        : ColorConstants.BLACK;
 
                                         table.addCell(valueCell(e.transcript().subjectCode(), textColor));
                                         table.addCell(valueCell(e.transcript().courseName(), textColor));
@@ -121,48 +156,74 @@ public class PdfGeneratorService {
                                         table.addCell(centerCell(e.transcript().grade(), textColor));
                                         table.addCell(valueCell(safe(e.remarks()), textColor));
                                         table.addCell(centerCell(
-                                                        String.valueOf(Math.round(e.confidenceScore())), textColor));
+                                                        String.valueOf(Math.round(e.confidenceScore())),
+                                                        textColor));
                                 }
                         }
 
                         document.add(table);
-                        document.add(spacer());
+
+                        document.add(new Paragraph(" "));
 
                         // ===============================
                         // FOOTER (LEFT + RIGHT)
                         // ===============================
+
                         Table footer = new Table(UnitValue.createPercentArray(new float[] { 1, 1 }))
                                         .useAllAvailableWidth();
 
+                        // LEFT SIDE
                         Cell left = new Cell().setBorder(Border.NO_BORDER);
 
-                        if (data.approvals() != null && data.approvals().approvedDate() != null) {
+                        if (data.approvals() != null &&
+                                        data.approvals().approvedDate() != null) {
+
                                 left.add(new Paragraph("sgd.")
                                                 .setFontColor(ColorConstants.RED)
                                                 .setMultipliedLeading(1));
-                                left.add(new Paragraph(programHead.getLastname() + ", " + programHead.getFirstname())
-                                                .setFontSize(10).setMultipliedLeading(1));
+
+                                left.add(new Paragraph(
+                                                programHead.getLastname() + ", " +
+                                                                programHead.getFirstname())
+                                                .setFontSize(10)
+                                                .setMultipliedLeading(1));
+
                                 left.add(new Paragraph("Program Head")
-                                                .setFontSize(10).setMultipliedLeading(1));
-                                left.add(new Paragraph(data.approvals().approvedDate().toLocalDate().toString())
-                                                .setFontSize(10).setMultipliedLeading(1));
+                                                .setFontSize(10)
+                                                .setMultipliedLeading(1));
+
+                                left.add(new Paragraph(
+                                                data.approvals().approvedDate().toLocalDate().toString())
+                                                .setFontSize(10)
+                                                .setMultipliedLeading(1));
                         } else {
+
                                 left.add(new Paragraph("_________________________"));
-                                left.add(new Paragraph(programHead.getLastname() + ", " + programHead.getFirstname()));
+                                left.add(new Paragraph(
+                                                programHead.getLastname() + ", " +
+                                                                programHead.getFirstname()));
                                 left.add(new Paragraph("Program Head"));
                         }
 
                         footer.addCell(left);
 
+                        // RIGHT SIDE
                         Cell right = new Cell()
                                         .setBorder(Border.NO_BORDER)
                                         .setTextAlignment(TextAlignment.RIGHT);
-                        right.add(new Paragraph("Units Credited: " + totalCredited + "/" + totalUnits)
+
+                        right.add(new Paragraph(
+                                        "Units Credited: " +
+                                                        totalCredited + "/" + totalUnits)
                                         .setFontColor(new DeviceRgb(6, 79, 30)));
-                        right.add(new Paragraph("Expected Year of Graduation: " + calculateGraduationYear())
+
+                        right.add(new Paragraph(
+                                        "Expected Year of Graduation: " +
+                                                        calculateGraduationYear())
                                         .setFontColor(new DeviceRgb(6, 79, 30)));
 
                         footer.addCell(right);
+
                         document.add(footer);
 
                         document.close();
@@ -174,87 +235,63 @@ public class PdfGeneratorService {
                 }
         }
 
-        // ===============================
-        // WRAPPER - forces text to wrap
-        // ===============================
-        private Table textRow(String text, float fontSize, boolean bold, DeviceRgb color) {
-                Table wrapper = new Table(UnitValue.createPercentArray(new float[] { 100 }))
-                                .useAllAvailableWidth()
-                                .setFixedLayout();
-
-                Paragraph p = new Paragraph(text)
-                                .setFontSize(fontSize)
-                                .setMultipliedLeading(1.3f);
-
-                if (bold)
-                        p.setBold();
-                if (color != null)
-                        p.setFontColor(color);
-
-                wrapper.addCell(new Cell()
-                                .setBorder(Border.NO_BORDER)
-                                .setPadding(0)
-                                .setMargin(0)
-                                .add(p));
-
-                return wrapper;
-        }
-
-        private Table spacer() {
-                Table spacer = new Table(UnitValue.createPercentArray(new float[] { 100 }))
-                                .useAllAvailableWidth();
-                spacer.addCell(new Cell()
-                                .setBorder(Border.NO_BORDER)
-                                .setPadding(2)
-                                .add(new Paragraph(" ").setFontSize(4)));
-                return spacer;
-        }
-
-        // ===============================
-        // CELL HELPERS
-        // ===============================
         private Cell valueCell(String text, Color color) {
                 return new Cell()
                                 .add(new Paragraph(safe(text))
                                                 .setFontSize(8.5f)
-                                                .setFontColor(color)
-                                                .setMultipliedLeading(1.2f))
-                                .setPadding(2)
-                                .setKeepTogether(false);
-        }
-
-        private Cell centerCell(String text, Color color) {
-                return new Cell()
-                                .add(new Paragraph(safe(text))
-                                                .setFontSize(8.5f)
-                                                .setFontColor(color)
-                                                .setMultipliedLeading(1.2f))
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setPadding(2)
-                                .setKeepTogether(false);
+                                                .setFontColor(color))
+                                .setPadding(2);
         }
 
         // ===============================
-        // GROUPING
+        // GROUPING (MATCH FRONTEND)
         // ===============================
         private Map<String, List<EvaluationItem>> groupByYearAndSemester(
                         List<EvaluationItem> evaluations) {
 
                 Map<String, Integer> yearOrder = Map.of(
-                                "First Year", 1, "Second Year", 2,
-                                "Third Year", 3, "Fourth Year", 4);
+                                "First Year", 1,
+                                "Second Year", 2,
+                                "Third Year", 3,
+                                "Fourth Year", 4);
 
                 Map<String, Integer> semOrder = Map.of(
-                                "First Semester", 1, "Second Semester", 2);
+                                "First Semester", 1,
+                                "Second Semester", 2);
 
                 return evaluations.stream()
                                 .sorted(Comparator
-                                                .comparing((EvaluationItem e) -> yearOrder.getOrDefault(
-                                                                safe(e.curricula().year()), 99))
-                                                .thenComparing(e -> semOrder.getOrDefault(
-                                                                safe(e.curricula().semester()), 99)))
+                                                // Sort by YEAR
+                                                .comparing((EvaluationItem e) -> {
+                                                        if (e.curricula() == null)
+                                                                return 999; // push "For Review" last
+                                                        return yearOrder.getOrDefault(
+                                                                        safe(e.curricula().year()), 99);
+                                                })
+                                                // Sort by SEMESTER
+                                                .thenComparing(e -> {
+                                                        if (e.curricula() == null)
+                                                                return 999;
+                                                        return semOrder.getOrDefault(
+                                                                        safe(e.curricula().semester()), 99);
+                                                }))
                                 .collect(Collectors.groupingBy(
-                                                e -> safe(e.curricula().year()) + ", " + safe(e.curricula().semester()),
+                                                e -> {
+                                                        // HANDLE NO MATCH
+                                                        if (e.curricula() == null) {
+                                                                return "For Review";
+                                                        }
+
+                                                        String year = safe(e.curricula().year());
+                                                        String sem = safe(e.curricula().semester());
+
+                                                        // fallback kung empty
+                                                        if (year.isBlank() && sem.isBlank()) {
+                                                                return "For Review";
+                                                        }
+
+                                                        return year + ", " + sem;
+                                                },
                                                 LinkedHashMap::new,
                                                 Collectors.toList()));
         }
@@ -262,12 +299,24 @@ public class PdfGeneratorService {
         // ===============================
         // HELPERS
         // ===============================
+
         private void addHeader(Table table, String text) {
                 table.addHeaderCell(new Cell()
-                                .add(new Paragraph(text).setFontSize(9).setBold())
+                                .add(new Paragraph(text)
+                                                .setFontSize(9)
+                                                .setBold())
                                 .setBackgroundColor(new DeviceRgb(6, 79, 30))
                                 .setFontColor(ColorConstants.WHITE)
                                 .setPadding(3));
+        }
+
+        private Cell centerCell(String text, Color color) {
+                return new Cell()
+                                .add(new Paragraph(safe(text))
+                                                .setFontSize(8.5f)
+                                                .setFontColor(color))
+                                .setTextAlignment(TextAlignment.CENTER)
+                                .setPadding(2);
         }
 
         private String safe(String value) {
@@ -277,8 +326,12 @@ public class PdfGeneratorService {
         private String calculateGraduationYear() {
                 LocalDate today = LocalDate.now();
                 int currentYear = today.getYear();
-                int academicStartYear = today.getMonthValue() < 6 ? currentYear - 1 : currentYear;
+                int academicStartYear = today.getMonthValue() < 6
+                                ? currentYear - 1
+                                : currentYear;
+
                 int graduationStart = academicStartYear + 3;
+
                 return "A.Y " + graduationStart + "-" + (graduationStart + 1);
         }
 }

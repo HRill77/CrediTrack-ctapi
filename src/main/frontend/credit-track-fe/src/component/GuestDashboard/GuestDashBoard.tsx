@@ -5,7 +5,12 @@ import {
   CircularProgress,
   Container,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
+import { HashLoader } from "react-spinners";
 import "../../shared/css/Dashboard.css";
 import NavBar from "../../shared/component/NavigationBar/NavBar";
 import dayjs from "dayjs";
@@ -48,6 +53,7 @@ const GuestDashboard = () => {
     courseDescription: [] as File[],
   });
   const [startCreditTractLoading, setStartCreditTractLoading] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [errors, setErrors] = useState<Partial<StudentFormData>>({});
   const [transferErrors, setTransferErrors] = useState<
     Partial<typeof transferData>
@@ -132,7 +138,7 @@ const GuestDashboard = () => {
     }));
   };
 
-  const handleStartCrediTrack = async () => {
+  const validateForm = (): boolean => {
     setErrorMessage("");
     const newErrors: Partial<StudentFormData> = {};
     const newTransferErrors: Partial<typeof transferData> = {};
@@ -156,11 +162,11 @@ const GuestDashboard = () => {
 
     if (uploadedFiles.transcript.length === 0) {
       setErrorMessage("Please upload transcript files");
-      return;
+      return false;
     }
     if (transcriptData.length === 0) {
       setErrorMessage("Please process the transcript files to add courses");
-      return;
+      return false;
     }
 
     if (Object.keys(newErrors).length > 0) setErrors(newErrors);
@@ -170,8 +176,22 @@ const GuestDashboard = () => {
       Object.keys(newErrors).length > 0 ||
       Object.keys(newTransferErrors).length > 0
     )
-      return;
+      return false;
 
+    return true;
+  };
+
+  const handleOpenConfirmModal = () => {
+    if (validateForm()) {
+      setShowConfirmModal(true);
+    }
+  };
+
+  const handleCloseConfirmModal = () => {
+    setShowConfirmModal(false);
+  };
+
+  const handleConfirmStartCrediTrack = async () => {
     try {
       setStartCreditTractLoading(true);
       const payload: StudentFormDataRequest = {
@@ -220,6 +240,7 @@ const GuestDashboard = () => {
         setEvaluationResult(evaluationResponse.data || []);
         setErrorMessage("");
         setShowResultModal(true);
+        setShowConfirmModal(false);
         if (!savedStudentId && response.data.studentId) {
           setSavedStudentId(Number(response.data.studentId));
         }
@@ -320,7 +341,7 @@ const GuestDashboard = () => {
 
             <Button
               variant="contained"
-              onClick={handleStartCrediTrack}
+              onClick={handleOpenConfirmModal}
               sx={{
                 backgroundColor: "#064F1E",
                 color: "#fff",
@@ -353,6 +374,103 @@ const GuestDashboard = () => {
             studentId={savedStudentId ?? undefined}
             transferData={transferData}
           />
+
+          {/* Confirmation Modal */}
+          <Dialog
+            open={showConfirmModal}
+            onClose={(event, reason) => {
+              if (reason === 'backdropClick' || reason === 'escapeKeyDown') {
+                return;
+              }
+              handleCloseConfirmModal();
+            }}
+            disableEscapeKeyDown
+            maxWidth="sm"   
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: "12px",
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
+              },
+            }}
+          >
+            <DialogTitle
+              sx={{
+                // backgroundColor: "#064F1E",
+                color: "#000000",
+                fontSize: "clamp(0.9rem, 2vw, 1.1rem)",
+                fontWeight: 600,
+                py: 2,
+              }}
+            >
+              Confirm CrediTrack
+            </DialogTitle>
+            <DialogContent
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                py: 4,
+                gap: 2,
+              }}
+            >
+              {startCreditTractLoading ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" , paddingTop: "14px"}}>
+                  <HashLoader color="#064F1E" size={50} />
+                  <Typography
+                    sx={{
+                      fontSize: "clamp(0.8rem, 1.5vw, 0.95rem)",
+                      color: "#666",
+                      mt: 2,
+                    }}
+                  >
+                    Processing your transcript...
+                  </Typography>
+                </div>
+              ) : (
+                <Typography
+                  sx={{
+                    fontSize: "clamp(0.85rem, 1.8vw, 0.95rem)",
+                    color: "#333",
+                    textAlign: "center",
+                    py: 5,
+                  }}
+                >
+                  Are you sure you want to start CrediTrack? This will process your transcript and evaluate your courses.
+                </Typography>
+              )}
+            </DialogContent>
+            <DialogActions sx={{ p: 2, gap: 1 }}>
+              <Button
+                onClick={handleCloseConfirmModal}
+                sx={{
+                  color: "#064F1E",
+                  textTransform: "none",
+                  fontSize: "0.9rem",
+                  fontWeight: 500,
+                }}  
+                disabled={startCreditTractLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmStartCrediTrack}
+                variant="contained"
+                sx={{
+                  backgroundColor: "#064F1E",
+                  color: "#fff",
+                  textTransform: "none",
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  "&:hover": { backgroundColor: "#053a16" },
+                }}
+                disabled={startCreditTractLoading}
+              >
+                Confirm
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Container>
       </Box>
 

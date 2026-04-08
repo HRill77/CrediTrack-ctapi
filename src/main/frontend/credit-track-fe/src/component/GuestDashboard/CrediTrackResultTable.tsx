@@ -136,6 +136,16 @@ const CrediTrackResultTable: React.FC<CrediTrackResultTableProps> = ({
   columns = CREDIT_TRACK_COLUMNS,
   data = CREDIT_TRACK_DATA,
 }) => {
+
+  const invalidRemarks = [
+  "Insufficient units",
+  "Failed grade",
+  "Course mismatch",
+  "Courses mismatch",
+  "Low similarity",
+  "No equivalent course found",
+];
+
   return (
     <Box
       sx={{
@@ -192,12 +202,7 @@ const CrediTrackResultTable: React.FC<CrediTrackResultTableProps> = ({
                     </TableCell>
                   </TableRow>
                   {section.courses.map((row: any, rowIndex: number) => {
-                    const isInvalid =
-                      row.remarks === "Insufficient units" ||
-                      row.remarks === "Failed grade" ||
-                      row.remarks === "Course mismatch" ||
-                      row.remarks === "Courses mismatch" ||
-                      row.remarks === "Low similarity";
+                    const isInvalid = invalidRemarks.includes(row.remarks);
                     return (
                       <TableRow
                         hover
