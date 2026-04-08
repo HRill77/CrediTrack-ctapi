@@ -81,6 +81,11 @@ public class OcrService {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
                 + apiKey;
 
+        // ==============================
+        // STEP 1: VALIDATE IMAGE FIRST
+        // ==============================
+        validateImages(files, url);
+
         List<Object> parts = new ArrayList<>();
 
         for (MultipartFile file : files) {
@@ -116,7 +121,7 @@ public class OcrService {
                         "grade": "",
                         "units": ""
                         }
-                        
+
                         Data rules:
                         - Preserve exact text as shown in the document.
                         - Units: remove any parentheses and return only the numeric value (e.g., "(3)" → "3")
@@ -166,6 +171,74 @@ public class OcrService {
         System.out.println("RAW RESPONSE: " + body);
 
         return parseGeminiResponse2(body);
+    }
+
+    // ==============================
+    // NEW: IMAGE VALIDATION
+    // ==============================
+    private void validateImages(List<MultipartFile> files, String url) throws Exception {
+
+        List<Object> parts = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            byte[] bytes = file.getBytes();
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+            String mimeType = detectMimeType(file.getOriginalFilename());
+
+            parts.add(Map.of(
+                    "inline_data", Map.of(
+                            "mime_type", mimeType,
+                            "data", base64)));
+        }
+
+        parts.add(Map.of("text",
+                """
+                        Look at the image(s) provided and answer with ONLY one of these exact responses:
+                        - "NO_TEXT" if the image contains no readable text at all (e.g., blank, photo, drawing)
+                        - "NOT_TRANSCRIPT" if the image contains text but is clearly NOT a Transcript of Records (e.g., random document, receipt, letter, ID, certificate, etc.)
+                        - "VALID" if the image appears to be a Transcript of Records (contains subject codes, grades, course names, academic years, student info)
+
+                        Reply with ONLY one word: NO_TEXT, NOT_TRANSCRIPT, or VALID
+                        """));
+
+        Map<String, Object> request = Map.of(
+                "contents", List.of(Map.of("parts", parts)),
+                "generationConfig", Map.of("temperature", 0));
+
+        String requestJson = mapper.writeValueAsString(request);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<String> entity = new HttpEntity<>(requestJson, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity, String.class);
+
+        JsonNode root = mapper.readTree(response.getBody());
+        String result = root
+                .path("candidates")
+                .get(0)
+                .path("content")
+                .path("parts")
+                .get(0)
+                .path("text")
+                .asText()
+                .trim()
+                .toUpperCase()
+                .replaceAll("[^A-Z_]", "");
+
+        System.out.println("IMAGE VALIDATION RESULT: " + result);
+
+        if (result.contains("NO_TEXT")) {
+            throw new IllegalArgumentException(
+                    " The uploaded image does not contain any readable text. Please upload a clear photo or scan of your Transcript of Records.");
+        }
+
+        if (result.contains("NOT_TRANSCRIPT")) {
+            throw new IllegalArgumentException(
+                    " The uploaded image does not appear to be a Transcript of Records. Please make sure you are uploading the correct document.");
+        }
     }
 
     private List<TranscriptRowDto> parseGeminiResponse2(String body) throws Exception {

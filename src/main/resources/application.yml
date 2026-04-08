@@ -70,7 +70,6 @@ sendgrid:
 google:
   gemini:
     api-key: ${GEMINI_API_KEY}
-
 server:
   servlet:
     session:

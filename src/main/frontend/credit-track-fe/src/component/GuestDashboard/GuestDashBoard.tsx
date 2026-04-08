@@ -100,7 +100,10 @@ const GuestDashboard = () => {
     if (!name) return;
     setTransferData((prev) => ({ ...prev, [name]: value }));
     if (transferErrors[name as keyof typeof transferData]) {
-      setTransferErrors((prev) => ({ ...prev, [name]: undefined }));
+      setTransferErrors((prev: Partial<typeof transferData>) => ({
+        ...prev,
+        [name]: undefined,
+      }));
     }
   };
 
@@ -241,7 +244,6 @@ const GuestDashboard = () => {
         if (!savedStudentId && response.data.studentId) {
           setSavedStudentId(Number(response.data.studentId));
         }
-
       } else {
         setErrorMessage(
           "Failed to save student data. Please check your inputs and try again.",
@@ -280,27 +282,6 @@ const GuestDashboard = () => {
             </Typography>
           </Box>
 
-          {/* Error Message */}
-          {errorMessage && (
-            <Box
-              sx={{
-                backgroundColor: "#ffebee",
-                color: "#c62828",
-                padding: { xs: "10px 12px", sm: "12px 16px" },
-                borderRadius: "8px",
-                marginBottom: "20px",
-                border: "1px solid #ef5350",
-              }}
-            >
-              <Typography
-                variant="body2"
-                sx={{ fontSize: "clamp(0.7rem, 1.8vw, 0.8rem)" }}
-              >
-                {errorMessage}
-              </Typography>
-            </Box>
-          )}
-
           <StudentDetails
             formData={formData}
             errors={errors}
@@ -325,7 +306,39 @@ const GuestDashboard = () => {
           />
 
           {/* START CrediTrack Button */}
-          <Box sx={{ display: "flex", justifyContent: "center", mb: 3, mt: 4 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              mb: 3,
+              mt: 4,
+              gap: 2,
+            }}
+          >
+            {/* Error Message — above the button */}
+            {errorMessage && (
+              <Box
+                sx={{
+                  backgroundColor: "#ffebee",
+                  color: "#c62828",
+                  padding: { xs: "10px 12px", sm: "12px 16px" },
+                  borderRadius: "8px",
+                  border: "1px solid #ef5350",
+                  width: "100%",
+                  maxWidth: 500,
+                  textAlign: "center",
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{ fontSize: "clamp(0.7rem, 1.8vw, 0.8rem)" }}
+                >
+                  {errorMessage}
+                </Typography>
+              </Box>
+            )}
+
             <Button
               variant="contained"
               onClick={handleOpenConfirmModal}
