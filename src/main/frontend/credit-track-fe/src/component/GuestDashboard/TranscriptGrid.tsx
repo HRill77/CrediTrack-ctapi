@@ -11,17 +11,23 @@ import {
   DialogActions,
   Alert,
 } from "@mui/material";
-import { DataGridPro, GridColDef, GridRowId } from "@mui/x-data-grid-pro";
+import { DataGridPro, GridColDef } from "@mui/x-data-grid-pro";
 import { TranscriptRow } from "../../shared/interface/TranscriptRow";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 interface Props {
   initialRows: TranscriptRow[];
   onRowsChange?: (rows: TranscriptRow[]) => void;
+  isProcessed?: boolean; // ← add this prop
 }
 
-const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
+const TranscriptGrid: React.FC<Props> = ({
+  initialRows,
+  onRowsChange,
+  isProcessed = false,
+}) => {
   const [rows, setRows] = useState<TranscriptRow[]>(initialRows);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<string | null>(null);
@@ -71,6 +77,7 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
   };
 
   const handleAddRow = () => {
+    if (!isProcessed) return;
     const maxId =
       rows.length > 0 ? Math.max(...rows.map((r) => parseInt(r.id))) : 0;
     const newRow: TranscriptRow = {
@@ -208,6 +215,36 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
 
   return (
     <>
+      {/* Instruction banner — only shown after processing */}
+      {isProcessed && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 1,
+            mb: 2,
+            p: 1.5,
+            backgroundColor: "#fff8e1",
+            borderRadius: 2,
+            border: "1px solid #ffe082",
+          }}
+        >
+          <InfoOutlinedIcon
+            sx={{ color: "#f9a825", fontSize: "1.1rem", mt: "2px" }}
+          />
+          <Typography
+            sx={{
+              fontSize: "clamp(0.65rem, 1.5vw, 0.78rem)",
+              color: "#5d4037",
+            }}
+          >
+            Please double-check the courses below. AI can make mistakes — use{" "}
+            <strong>Add Row</strong> to manually add any missing courses, and{" "}
+            <strong>double-click</strong> a cell to edit its value.
+          </Typography>
+        </Box>
+      )}
+
       <Box
         sx={{
           display: "flex",
@@ -217,22 +254,39 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
           alignItems: "center",
         }}
       >
-        <Tooltip title="Add New Row">
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAddRow}
-            size="small"
-            sx={{
-              backgroundColor: "#064F1E",
-              color: "#fff",
-              textTransform: "none",
-              fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)",
-              "&:hover": { backgroundColor: "#053a16" },
-            }}
-          >
-            Add Row
-          </Button>
+        {/* Add Row button — grayed out if not processed */}
+        <Tooltip
+          title={
+            !isProcessed ? "You need to click Process first" : "Add New Row"
+          }
+          arrow
+        >
+          <span>
+            {" "}
+            {/* span wrapper needed for Tooltip to work on disabled button */}
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAddRow}
+              size="small"
+              disabled={!isProcessed}
+              sx={{
+                backgroundColor: isProcessed ? "#064F1E" : "#bdbdbd",
+                color: "#fff",
+                textTransform: "none",
+                fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)",
+                "&:hover": {
+                  backgroundColor: isProcessed ? "#053a16" : "#bdbdbd",
+                },
+                "&.Mui-disabled": {
+                  backgroundColor: "#bdbdbd",
+                  color: "#fff",
+                },
+              }}
+            >
+              Add Row
+            </Button>
+          </span>
         </Tooltip>
 
         {rows.length > 0 && (
@@ -250,12 +304,12 @@ const TranscriptGrid: React.FC<Props> = ({ initialRows, onRowsChange }) => {
           </Button>
         )}
 
-        {rows.length === 0 && (
+        {!isProcessed && rows.length === 0 && (
           <Typography
             variant="caption"
             sx={{ color: "#999", fontSize: "clamp(0.65rem, 1.5vw, 0.75rem)" }}
           >
-            No transcript data added yet. Click "Add Row" to start.
+            Click "Process" first to proceed for manual entry.
           </Typography>
         )}
       </Box>

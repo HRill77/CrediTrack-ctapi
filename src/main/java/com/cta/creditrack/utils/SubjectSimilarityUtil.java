@@ -36,8 +36,32 @@ public class SubjectSimilarityUtil {
         double creditScore = creditMatch(transcriptCredits, curriculumCredits);
 
         return (jaroScore * 0.4) +
-               (cosineScore * 0.4) +
-               (creditScore * 0.2);
+                (cosineScore * 0.4) +
+                (creditScore * 0.2);
+    }
+
+    // NORMALIZATION (dynamic)
+    private static String normalizeAndSort(String text) {
+        if (text == null)
+            return "";
+
+        return Arrays.stream(
+                text.toLowerCase()
+                        .replaceAll("[^a-z0-9\\s]", "") // remove punctuation
+                        .replaceAll("\\b(\\w+)'s\\b", "$1") // remove possessive
+                        .split("\\s+"))
+                .map(SubjectSimilarityUtil::stemWord) // normalize plurals
+                .filter(word -> !STOPWORDS.contains(word)) // remove stopwords
+                .sorted() // ignore word order
+                .collect(Collectors.joining(" "));
+    }
+
+    // SIMPLE STEMMER (generic)
+    private static String stemWord(String word) {
+        if (word.endsWith("s") && word.length() > 3) {
+            return word.substring(0, word.length() - 1);
+        }
+        return word;
     }
 
     // NORMALIZATION (dynamic)
@@ -86,8 +110,10 @@ public class SubjectSimilarityUtil {
     }
 
     private static double creditMatch(int tCredits, int cCredits) {
-        if (tCredits == cCredits) return 100;
-        if (Math.abs(tCredits - cCredits) == 1) return 80;
+        if (tCredits == cCredits)
+            return 100;
+        if (Math.abs(tCredits - cCredits) == 1)
+            return 80;
         return 50;
     }
 }
